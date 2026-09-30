@@ -1,0 +1,193 @@
+<!--#TITLE-->
+PoE PD 的 DC-DC 拓撲選擇
+<!--#H1-->
+DC-DC 拓撲選擇
+<!--#H1_EN-->
+Choosing the PD's DC-DC stage · isolated vs non-isolated
+<!--#CHIP-->
+FLYBACK <span>·</span> FORWARD <span>·</span> BUCK
+<!--#LEDE-->
+<p class="lede">PD 介面之後的 DC-DC 要把 37–57 V 降到 12／5／3.3 V。選哪一種拓撲，主要看三件事：<b>功率</b>、<b>是否需要電氣隔離</b>（設備有沒有使用者摸得到的金屬或外接介面），以及<b>要幾路輸出</b>。調整下方條件，看各拓撲的適合程度、預估效率與發熱，再連到 DC-DC 系列看電路動畫。
+  <span class="en">After the PD interface, a DC-DC stage turns 37–57 V into board rails. The choice depends on power, whether isolation is needed, and how many outputs you need. Adjust the conditions to rank the topologies, then open the animated pages in the DC-DC series.</span></p>
+<!--#STYLE-->
+#effChart{min-width:560px}
+<!--#BODY-->
+  <section class="panel" aria-labelledby="h-in">
+    <h2 id="h-in"><span class="step">1</span>設計條件 <span class="en">Requirements</span></h2>
+    <div class="ctl-row"><span class="lab">隔離需求 Isolation</span>
+      <div class="seg" id="segIso" role="group" aria-label="Isolation" style="flex-wrap:wrap">
+        <button type="button" data-v="need">需要：有外露金屬、USB、外接感測器 Exposed conductors</button><button type="button" data-v="none">不需要：全封閉、無外露導體 Fully enclosed</button>
+      </div>
+    </div>
+    <div class="ctl-row"><span class="lab">輸出路數 Outputs</span>
+      <div class="seg" id="segOut" role="group" aria-label="Outputs"><button type="button" data-v="1">1 路 single</button><button type="button" data-v="2">多路 multiple</button></div>
+      <span class="lab">優先 Priority</span>
+      <div class="seg" id="segPri" role="group" aria-label="Priority"><button type="button" data-v="cost">成本 cost</button><button type="button" data-v="eff">效率／散熱 efficiency</button></div>
+    </div>
+    <div class="params" id="params"></div>
+    <div class="presets" id="presets"><span>範例 Presets：</span></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-rank">
+    <h2 id="h-rank"><span class="step">2</span>拓撲建議 <span class="en">Recommendation</span></h2>
+    <div class="badges" id="badges"></div>
+    <div class="topo-cards" id="cards"></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-eff">
+    <h2 id="h-eff"><span class="step">3</span>典型效率範圍與功率區間 <span class="en">Typical efficiency vs power</span></h2>
+    <div class="scroll-x"><svg id="effChart" viewBox="0 0 900 300" role="img" aria-label="各拓撲的典型功率範圍與效率"></svg></div>
+    <p class="lede" style="margin-top:8px;font-size:13px">色帶是一般 PoE PD 設計常見的功率區間與效率範圍（含同步整流與否的差異），屬經驗值，實際效率取決於輸出電壓、元件與佈局。直線是目前選的功率。
+      <span class="en">Bands show typical power ranges and efficiencies from common PoE PD designs; they are rules of thumb, not guarantees.</span></p>
+  </section>
+
+  <section class="panel" aria-labelledby="h-cmp">
+    <h2 id="h-cmp"><span class="step">4</span>比較表 <span class="en">Side-by-side comparison</span></h2>
+    <div class="scroll-x">
+      <table class="tbl">
+        <thead><tr><th>拓撲 Topology</th><th>常見功率</th><th>隔離</th><th>優點</th><th>缺點／考量</th><th>動畫頁</th></tr></thead>
+        <tbody>
+          <tr><td>非隔離 Buck</td><td class="m">任意（常見 &lt; 30 W）</td><td>無</td><td>成本最低、體積最小，沒有變壓器與光耦</td><td>不具隔離，只能用在沒有外露導體的全封閉設備；48 V → 3.3 V 佔空比很小，常需兩級</td><td><a href="https://dcdc-topology-series.vercel.app/buck.html" target="_blank" rel="noopener">02 BUCK</a></td></tr>
+          <tr><td>Flyback（二極體整流）</td><td class="m">3–25 W</td><td>有</td><td>元件最少、容易多路輸出，af／at 最主流</td><td>漏感突波要靠 RCD 箝位吸收；次級二極體損耗在低壓大電流時明顯</td><td><a href="https://dcdc-topology-series.vercel.app/flyback.html" target="_blank" rel="noopener">05 FLYBACK</a></td></tr>
+          <tr><td>同步整流 Flyback</td><td class="m">10–45 W</td><td>有</td><td>次級改用 MOSFET，效率與溫升明顯改善</td><td>需要同步整流控制器；PSR（初級側調節）可省光耦但調節精度較低</td><td><a href="https://dcdc-topology-series.vercel.app/flyback.html" target="_blank" rel="noopener">05 FLYBACK</a></td></tr>
+          <tr><td>主動箝位 Forward（ACF）</td><td class="m">25–90 W</td><td>有</td><td>箝位電容讓磁通往負方向重置，磁芯利用率高、開關應力低，效率常達 91–94%</td><td>兩顆主開關（主開關＋箝位開關），需要死區控制；多一顆輸出電感</td><td><a href="https://dcdc-topology-series.vercel.app/acf.html" target="_blank" rel="noopener">06 ACF</a></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-notes">
+    <h2 id="h-notes"><span class="step">5</span>實務注意事項 <span class="en">Practical notes</span></h2>
+    <div class="note-key"><span><span class="src ieee">IEEE</span> IEEE 802.3 規範</span><span><span class="src add">補充</span> 一般設計經驗補充</span></div>
+    <div class="ngroups">
+      <div class="ngroup" style="--c:var(--warn)">
+        <h3>隔離與安規 <span class="en">Isolation</span></h3>
+        <ul>
+          <li><b>為什麼 PoE 要隔離</b><span class="src ieee">IEEE</span><br>規範要求 PoE 介面與使用者可接觸的導體之間有 1500 Vrms 等級的隔離。網路線可能很長、兩端地電位不同，還可能感應雷擊突波。<span class="en">1500 Vrms-class isolation from user-accessible conductors; long cables see ground shifts and surges.</span></li>
+          <li><b>什麼時候可以不隔離</b><span class="src ieee">IEEE</span><span class="src add">補充</span><br>整台設備完全封閉、沒有任何外露金屬或對外連接埠（例如只有一個 RJ45 的吸頂感測器），才考慮非隔離 Buck；有 USB、音源、外接感測器或金屬外殼就要隔離。<span class="en">Non-isolated only when nothing conductive is user-accessible.</span></li>
+          <li><b>隔離帶 Layout</b><span class="src add">補充</span><br>變壓器、光耦與 Y 電容跨越隔離帶；隔離帶下方各層都不可鋪銅，爬電距離與電氣間隙依安規與污染等級計算。<span class="en">Only the transformer, opto and Y-cap cross the barrier; keep all layers clear underneath.</span></li>
+        </ul>
+      </div>
+      <div class="ngroup" style="--c:var(--accent)">
+        <h3>Flyback 設計重點 <span class="en">Flyback</span></h3>
+        <ul>
+          <li><b>匝比決定開關應力</b><span class="src add">補充</span><br>Q 關斷時承受 V<sub>IN</sub> + n·(V<sub>OUT</sub> + V<sub>F</sub>) 再加漏感突波；57 V 輸入時常選 150–200 V 的 MOSFET。匝比越大，佔空比越大、MOSFET 應力越高。<span class="en">The switch sees VIN + n·(VOUT + VF) plus the leakage spike.</span></li>
+          <li><b>漏感與箝位</b><span class="src add">補充</span><br>變壓器漏感的能量無法傳到次級，只能靠 RCD 或齊納箝位吸收。繞線用三明治繞法降低漏感，箝位回路要貼近 MOSFET。<span class="en">Leakage energy is clamped; interleave windings and keep the clamp tight.</span></li>
+          <li><b>次級同步整流</b><span class="src add">補充</span><br>5 V／3 A 這類低壓大電流輸出，蕭特基壓降佔輸出電壓的比例很大，改用同步整流可提高數個百分點效率，並大幅降低溫升。<span class="en">SR matters most for low-voltage, high-current outputs.</span></li>
+        </ul>
+      </div>
+      <div class="ngroup" style="--c:var(--ok)">
+        <h3>主動箝位 Forward 重點 <span class="en">Active-clamp forward</span></h3>
+        <ul>
+          <li><b>磁通雙向重置</b><span class="src add">補充</span><br>主開關關斷時，箝位電容與箝位開關讓激磁電流反向，磁通往負方向走，用到磁化曲線的第二象限；比 RCD 或第三繞組重置的 Forward 磁芯利用率高。<span class="en">The clamp drives the magnetizing current negative, using both flux quadrants.</span></li>
+          <li><b>開關應力 V<sub>IN</sub>/(1−D)</b><span class="src add">補充</span><br>主開關承受的電壓約為 V<sub>IN</sub>/(1−D)，D 接近 50% 時約 2·V<sub>IN</sub>；比 Flyback 加上漏感突波的應力更可預測，可選較低耐壓的 MOSFET。<span class="en">Switch stress ≈ VIN/(1−D), predictable with no spike.</span></li>
+          <li><b>適合 bt 高功率</b><span class="src add">補充</span><br>輸出有獨立電感，輸出漣波電流小，適合 12 V／5 A 以上的大電流輸出，例如 Wi-Fi 7 AP 與 PTZ 攝影機。<span class="en">The output inductor keeps ripple low for high-current rails.</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+<!--#FOOTER-->
+拓撲建議為教學用的經驗規則：功率區間與效率範圍取自一般 PoE PD 設計常見值，屬 AI 整理的經驗值而非規範；隔離要求依 IEEE 802.3 Clause 33／145 的電氣隔離條文。實際選型請依設備安規、晶片規格書與實測效率決定。電路動畫頁在 <a href="https://dcdc-topology-series.vercel.app/" target="_blank" rel="noopener">DC-DC 拓撲系列</a>。
+<br>The ranking is a rule-of-thumb teaching aid, not a standard. Animated circuits are in the DC-DC Topology Series.
+<!--#SCRIPT-->
+(function(){
+  const P = {iso:'need', out:'1', pri:'cost', pw:25, vout:12};
+  const TOPO = [
+    {k:'buck', zh:'非隔離 Buck', en:'Non-isolated buck', iso:false, lo:1, hi:60, eff:[0.90, 0.94], c:'var(--teal)', link:'buck.html', no:'02 BUCK', cost:5},
+    {k:'fb', zh:'Flyback（二極體整流）', en:'Flyback, diode rectified', iso:true, lo:3, hi:25, eff:[0.82, 0.88], c:'var(--accent)', link:'flyback.html', no:'05 FLYBACK', cost:4},
+    {k:'fbsr', zh:'同步整流 Flyback', en:'Flyback, synchronous rectified', iso:true, lo:10, hi:45, eff:[0.87, 0.91], c:'var(--on)', link:'flyback.html', no:'05 FLYBACK', cost:3},
+    {k:'acf', zh:'主動箝位 Forward', en:'Active-clamp forward', iso:true, lo:25, hi:90, eff:[0.91, 0.94], c:'var(--off)', link:'acf.html', no:'06 ACF', cost:2}
+  ];
+  const defs = [
+    {k:'pw', zh:'PD 輸出功率', en:'Output power', min:2, max:71, step:0.5, fmt:v => v.toFixed(1) + ' W'},
+    {k:'vout', zh:'主輸出電壓', en:'Main output', min:3.3, max:24, step:0.1, fmt:v => v.toFixed(1) + ' V'}
+  ];
+  const presets = [
+    {label:'IP Cam · 6 W · 5 V · 隔離', v:{iso:'need', out:'1', pri:'cost', pw:6, vout:5}},
+    {label:'VoIP 話機 · 多路輸出', v:{iso:'need', out:'2', pri:'cost', pw:5, vout:3.3}},
+    {label:'Wi-Fi 6 AP · 22 W · 12 V', v:{iso:'need', out:'1', pri:'eff', pw:22, vout:12}},
+    {label:'Wi-Fi 7 AP · 45 W · 12 V', v:{iso:'need', out:'1', pri:'eff', pw:45, vout:12}},
+    {label:'PTZ · 65 W · 24 V', v:{iso:'need', out:'1', pri:'eff', pw:65, vout:24}},
+    {label:'吸頂感測器 · 全封閉 · 4 W', v:{iso:'none', out:'1', pri:'cost', pw:4, vout:3.3}}
+  ];
+  const sync = sliders(defs, P, $('params'), () => update());
+  presets.forEach(p => {
+    const b = document.createElement('button'); b.type = 'button'; b.textContent = p.label;
+    b.addEventListener('click', () => { Object.assign(P, p.v); segs(); sync(); update(); });
+    $('presets').appendChild(b);
+  });
+  segGroup('segIso', v => { P.iso = v; update(); });
+  segGroup('segOut', v => { P.out = v; update(); });
+  segGroup('segPri', v => { P.pri = v; update(); });
+  function segs(){ setSeg('segIso', P.iso); setSeg('segOut', P.out); setSeg('segPri', P.pri); }
+
+  function effAt(t, pw){
+    const f = Math.max(0, Math.min(1, (pw - t.lo)/(t.hi - t.lo)));
+    let e = t.eff[0] + (t.eff[1] - t.eff[0])*Math.min(1, f*1.6);
+    if (pw > t.hi) e -= (pw - t.hi)*0.002;
+    if (P.vout < 5 && (t.k === 'fb')) e -= 0.03;
+    if (P.vout < 5 && (t.k === 'fbsr' || t.k === 'acf')) e -= 0.01;
+    return e;
+  }
+  function score(t){
+    const why = [];
+    let s = 60;
+    if (t.iso === false && P.iso === 'need') return {s:0, why:[['bad', '不具隔離，這個設備不能用']]};
+    if (t.iso === false) { s += 20; why.push(['good', '不需隔離時最便宜、最小']); }
+    if (P.pw < t.lo) { s -= Math.min(30, (t.lo - P.pw)*3); why.push(['bad', `低於常見功率 ${t.lo} W，零件數與成本划不來`]); }
+    else if (P.pw > t.hi) { s -= Math.min(50, (P.pw - t.hi)*2.5); why.push(['bad', `高於常見功率 ${t.hi} W，損耗與發熱過大`]); }
+    else why.push(['good', `落在常見功率 ${t.lo}–${t.hi} W 內`]);
+    if (P.out === '2') { if (t.k === 'fb' || t.k === 'fbsr') { s += 10; why.push(['good', '多路輸出只要多繞一組線圈']); } else if (t.k === 'acf') { s -= 8; why.push(['bad', '每一路都需要輸出電感，多路較麻煩']); } else { s -= 12; why.push(['bad', '多路輸出要再加轉換器']); } }
+    if (P.pri === 'cost') { s += t.cost*3; } else { s += (effAt(t, P.pw) - 0.85)*200; }
+    if (t.k === 'fb' && P.pw > 15 && P.vout <= 5) { s -= 10; why.push(['bad', '低壓大電流時次級二極體損耗大']); }
+    if (t.k === 'buck' && P.vout < 5) why.push(['bad', '48 V → 低壓佔空比很小，常需兩級']);
+    return {s:Math.max(0, Math.min(100, s)), why};
+  }
+
+  function update(){
+    segs();
+    const res = TOPO.map(t => Object.assign({t}, score(t), {e:effAt(t, P.pw)}));
+    const best = res.reduce((a, b) => b.s > a.s ? b : a);
+    $('cards').innerHTML = res.map(r => {
+      const loss = P.pw*(1/r.e - 1), iout = P.pw/P.vout;
+      return `<article class="topo ${r === best && r.s > 0 ? 'best' : ''} ${r.s === 0 ? 'no' : ''}" style="--c:${r.t.c}">
+        <h3>${r.t.zh}<span class="en"> ${r.t.en}</span></h3>
+        <div class="score">${r.s.toFixed(0)}<span style="font-size:14px;color:var(--muted)"> / 100${r === best && r.s > 0 ? ' · 建議 best fit' : ''}</span></div>
+        <div class="meter"><i style="width:${r.s}%"></i></div>
+        <ul>${r.why.map(([k, t]) => `<li class="${k}">${t}</li>`).join('')}</ul>
+        ${r.s > 0 ? `<div class="kv" style="--c:${r.t.c}"><div>預估效率<b>${(r.e*100).toFixed(0)} %</b></div><div>發熱<b>${fx(loss, 1)} W</b></div><div>輸出電流<b>${fx(iout, 2)} A</b></div></div>` : ''}
+        <a href="https://dcdc-topology-series.vercel.app/${r.t.link}" target="_blank" rel="noopener">看電路動畫 ${r.t.no} →</a>
+      </article>`;
+    }).join('');
+    const b = [];
+    b.push(['info', P.iso === 'need' ? '需要隔離：排除非隔離 Buck' : '不需隔離：非隔離 Buck 也可以考慮']);
+    const cls = POE.classes.find(c => c.c >= 1 && c.pd >= P.pw/best.e) || POE.classes[8];
+    b.push(['info', `PD 端約需 ${fx(P.pw/best.e, 1)} W（以建議拓撲效率計）→ 至少 Class ${cls.c}（${cls.pd} W）`]);
+    if (P.pw/best.e > 71.3) b.push(['warn', '超過 PoE 最高 71.3 W，需降低負載或改用其他供電']);
+    $('badges').innerHTML = b.map(([k, t]) => `<span class="badge ${k}">${t}</span>`).join('');
+    chart();
+  }
+
+  function chart(){
+    const g = $('effChart'); g.innerHTML = '';
+    const X0 = 70, X1 = 880, Y0 = 20, Y1 = 250, PMAX = 90, E0 = 0.78, E1 = 0.96;
+    const x = p => X0 + p/PMAX*(X1 - X0), y = e => Y1 - (e - E0)/(E1 - E0)*(Y1 - Y0);
+    svgEl('line', {x1:X0, x2:X1, y1:Y1, y2:Y1, class:'axis'}, g);
+    svgEl('line', {x1:X0, x2:X0, y1:Y0, y2:Y1, class:'axis'}, g);
+    [0, 15, 30, 45, 60, 75, 90].forEach(p => svgEl('text', {x:x(p), y:Y1 + 16, 'text-anchor':'middle', class:'tick'}, g, p + ' W'));
+    [0.8, 0.85, 0.9, 0.95].forEach(e => { svgEl('text', {x:X0 - 6, y:y(e) + 4, 'text-anchor':'end', class:'tick'}, g, (e*100).toFixed(0) + '%'); svgEl('line', {x1:X0, x2:X1, y1:y(e), y2:y(e), stroke:'var(--line)', 'stroke-width':.6, 'stroke-dasharray':'2 4'}, g); });
+    [[12.95, 'af 12.95 W'], [25.5, 'at 25.5 W'], [51, 'bt 51 W'], [71.3, 'bt 71.3 W']].forEach(([p, l]) => {
+      svgEl('line', {x1:x(p), x2:x(p), y1:Y0, y2:Y1, stroke:'var(--muted)', 'stroke-width':1, 'stroke-dasharray':'3 5'}, g);
+      svgEl('text', {x:x(p) + 3, y:Y0 + 8, class:'tick'}, g, l);
+    });
+    TOPO.forEach((t, i) => {
+      const dim = P.iso === 'need' && !t.iso;
+      svgEl('rect', {x:x(t.lo), y:y(t.eff[1]), width:x(t.hi) - x(t.lo), height:y(t.eff[0]) - y(t.eff[1]), rx:6, fill:t.c, 'fill-opacity':dim ? .06 : .22, stroke:t.c, 'stroke-width':1.5, 'stroke-dasharray':dim ? '4 4' : ''}, g);
+      svgEl('text', {x:x(t.lo) + 6, y:y(t.eff[1]) + 14 + (i === 0 ? 0 : 0), class:'ref-lbl', fill:t.c}, g, t.zh + (dim ? '（不適用）' : ''));
+    });
+    svgEl('line', {x1:x(P.pw), x2:x(P.pw), y1:Y0, y2:Y1, stroke:'var(--ink)', 'stroke-width':2}, g);
+    svgEl('text', {x:x(P.pw), y:Y1 + 32, 'text-anchor':'middle', class:'wf-val', fill:'var(--ink)'}, g, fx(P.pw, 1) + ' W');
+    svgEl('text', {x:X1, y:Y1 + 32, 'text-anchor':'end', class:'tick'}, g, '輸出功率 Output power');
+  }
+  update();
+})();

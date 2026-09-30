@@ -1,0 +1,84 @@
+<!--#TITLE-->
+PoE PD 互動教學
+<!--#H1-->
+PoE PD 互動教學
+<!--#H1_EN-->
+Power over Ethernet · powered device, from RJ45 to DC-DC
+<!--#CHIP-->
+4 <span>×</span> TOPICS
+<!--#LEDE-->
+<p class="lede">PoE PD（受電端設備）由兩段組成：前段的 <b>PD 介面</b>負責和 PSE 握手、安全地把電接進來；後段的 <b>DC-DC</b> 把 37–57 V 轉成板上電壓。四個互動頁分別說明架構、握手狀態機、功率預算，以及 DC-DC 拓撲的選擇，並整理 Layout、選料與除錯的注意事項。
+  <span class="en">A PoE powered device has two stages: the PD interface that handshakes with the PSE and brings power in safely, and a DC-DC converter that makes the board rails. Four interactive pages cover the architecture, the handshake, the power budget and the DC-DC topology choice.</span></p>
+<!--#STYLE-->
+.flow-line{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-weight:700;font-size:14px}
+.flow-line span{border:1.5px solid var(--line);border-radius:8px;padding:4px 10px;background:var(--paper-2)}
+.flow-line i{font-style:normal;color:var(--muted)}
+<!--#BODY-->
+  <section class="panel" aria-labelledby="h-chain">
+    <h2 id="h-chain">一條電源鏈 <span class="en">The whole chain</span></h2>
+    <div class="flow-line">
+      <span>PSE（PoE Switch）44–57 V</span><i>→</i><span>網路線 I²R</span><i>→</i><span>RJ45 · 變壓器中心抽頭</span><i>→</i><span>整流橋 ×2</span><i>→</i><span>TVS · C<sub>det</sub></span><i>→</i><span>PD 控制器：偵測・分級・hot-swap・PG</span><i>→</i><span>C<sub>bulk</sub></span><i>→</i><span>DC-DC（隔離／非隔離）</span><i>→</i><span>負載 12／5／3.3 V</span>
+    </div>
+  </section>
+
+  <div class="cards">
+    <a class="card" href="architecture.html" style="--c:var(--accent)">
+      <span class="no">01 · ARCHITECTURE</span>
+      <h2>架構總覽<small>From RJ45 to the load</small></h2>
+      <p>切換 <b>ALT A／ALT B／4 對</b>與極性，看電流實際走哪兩顆二極體；比較蕭特基與主動整流橋的損耗。</p>
+      <ul><li>兩組線對各需一個整流橋</li><li>hot-swap 開關在低側 VSS → RTN</li></ul>
+      <span class="go">開啟 Open →</span>
+    </a>
+    <a class="card" href="handshake.html" style="--c:var(--teal)">
+      <span class="no">02 · HANDSHAKE</span>
+      <h2>握手狀態機<small>Detection · Class · Inrush · MPS</small></h2>
+      <p>PD 端的 V<sub>port</sub>／I<sub>port</sub> 波形與狀態機同步播放，可選 Class 0–8、PSE 類型，並模擬<b>三種常見故障</b>。</p>
+      <ul><li>多事件分級與功率降級</li><li>DC-DC 太早啟動、MPS 不足</li></ul>
+      <span class="go">開啟 Open →</span>
+    </a>
+    <a class="card" href="power-budget.html" style="--c:var(--on)">
+      <span class="no">03 · POWER BUDGET</span>
+      <h2>功率預算<small>90 W at the PSE, 71.3 W at the PD</small></h2>
+      <p>從 PSE 到負載逐段算損耗：<b>線損、整流橋、hot-swap、DC-DC</b>，並檢查 Class 功率、線對電流與 V<sub>port</sub> 下限。</p>
+      <ul><li>Class 功率的推導</li><li>AP、PTZ、IP Cam 範例</li></ul>
+      <span class="go">開啟 Open →</span>
+    </a>
+    <a class="card" href="dcdc-topology.html" style="--c:var(--off)">
+      <span class="no">04 · DC-DC</span>
+      <h2>拓撲選擇<small>Flyback · ACF · Buck</small></h2>
+      <p>依功率、隔離需求、輸出路數與成本／效率優先，排出適合的拓撲，連到 DC-DC 系列看電路動畫。</p>
+      <ul><li>何時可以不隔離</li><li>Flyback 與主動箝位 Forward 的差別</li></ul>
+      <span class="go">開啟 Open →</span>
+    </a>
+  </div>
+
+  <section class="panel" aria-labelledby="h-dbg">
+    <h2 id="h-dbg">常見問題速查 <span class="en">Quick troubleshooting</span></h2>
+    <div class="scroll-x">
+      <table class="tbl">
+        <thead><tr><th>症狀</th><th>最可能的原因</th><th>看哪一頁</th></tr></thead>
+        <tbody>
+          <tr><td>PSE 完全不送電</td><td>偵測特徵電阻不在 19–26.5 kΩ（整流橋漏電、V<sub>port</sub> 端電容太大）</td><td><a href="handshake.html">02 握手</a></td></tr>
+          <tr><td>一上電就反覆重啟</td><td>DC-DC 沒等 PG 就啟動，湧浪時撞到 PSE 限流</td><td><a href="handshake.html">02 握手</a></td></tr>
+          <tr><td>只拿到 13 W／25.5 W</td><td>PSE 能力不足造成功率降級，或 Class 電阻設錯</td><td><a href="handshake.html">02 握手</a></td></tr>
+          <tr><td>待機後斷電</td><td>待機電流低於 MPS 門檻且沒有 MPS 脈衝</td><td><a href="handshake.html">02 握手</a></td></tr>
+          <tr><td>滿載或長線時斷電</td><td>線損太大、V<sub>port</sub> 過低，或負載超過核准功率</td><td><a href="power-budget.html">03 功率預算</a></td></tr>
+          <tr><td>整流橋很燙</td><td>高功率仍用蕭特基整流，損耗約 2·V<sub>F</sub>·I</td><td><a href="architecture.html">01 架構</a></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-how">
+    <h2 id="h-how">怎麼使用 <span class="en">How to use</span></h2>
+    <ol class="steps">
+      <li>先看「01 架構總覽」建立整條電源鏈的概念。<span class="en">Start with the architecture page.</span></li>
+      <li>「02 握手狀態機」按播放或「下一段」，對照波形、狀態機與說明卡；切換故障情境看失敗時的樣子。<span class="en">Step through the handshake and try the fault scenarios.</span></li>
+      <li>「03 功率預算」選範例或自己調參數，看每一段損耗與規範檢查。<span class="en">Load a preset in the budget page and watch each loss.</span></li>
+      <li>「04 拓撲選擇」決定 DC-DC，再到 <a href="https://dcdc-topology-series.vercel.app/" target="_blank" rel="noopener">DC-DC 拓撲系列</a>看 Flyback、ACF、Buck 的電路動畫。<span class="en">Pick a DC-DC topology, then open its animation in the DC-DC series.</span></li>
+    </ol>
+  </section>
+<!--#FOOTER-->
+依據：IEEE 802.3-2022 Clause 33（802.3af／at）與 Clause 145（802.3bt）的 PD 要求；TI、ADI PD 控制器與整流橋控制器資料。每頁注意事項都標出出處（IEEE／晶片廠／補充）。頁面為教學模型，實際設計請以規範與晶片規格書為準。
+<br>Based on the PD requirements of IEEE 802.3 Clauses 33 and 145 and vendor datasheets. Teaching models only; always verify against the standard and datasheets.
+<!--#SCRIPT-->

@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PoE 功率預算計算器</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="assets/series.css">
+<style>
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px 22px;margin-bottom:14px}
+.opts .ctl{flex-wrap:wrap}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="series" aria-label="系列 Series"><span class="lab">系列 Series</span><a href="./"><b>HOME</b>系列首頁</a><a href="architecture.html"><b>01 ARCHITECTURE</b>架構總覽</a><a href="handshake.html"><b>02 HANDSHAKE</b>握手狀態機</a><span class="cur" aria-current="page"><b>03 POWER BUDGET</b>功率預算</span><a href="dcdc-topology.html"><b>04 DC-DC</b>拓撲選擇</a><a href="https://dcdc-topology-series.vercel.app/" target="_blank" rel="noopener"><b>↗ DC-DC</b>拓撲系列</a></nav>
+<header>
+<div>
+<div class="eyebrow">PoE PD Series · 03</div>
+<h1>PoE 功率預算<small>Power budget · PSE → cable → bridge → hot-swap → DC-DC → load</small></h1>
+</div>
+<div class="chip-dc">90 W <span>→</span> 71.3 W</div>
+<p class="lede">為什麼 bt Class 8 的 PSE 送出 90 W，PD 卻只能用 71.3 W？因為 100 m 網路線的電阻會吃掉 I²R。這一頁把整條電源鏈攤開：PSE 輸出 → <b>線損</b> → PD 端 → <b>整流橋</b> → <b>hot-swap MOSFET</b> → <b>DC-DC</b> → 負載，每一段的損耗都即時算給你看，並檢查是否超過 Class 功率、電流與 V<sub>port</sub> 下限。
+<span class="en">Why does a 90 W Class 8 PSE leave only 71.3 W at the PD? The cable eats I²R. This page walks the whole chain — PSE, cable, bridge, hot-swap switch, DC-DC, load — and checks class power, cable current and minimum port voltage.</span></p>
+</header>
+<div class="grid-2">
+<section class="panel" aria-labelledby="h-param">
+<h2 id="h-param"><span class="step">1</span>設定 <span class="en">Inputs</span></h2>
+<div class="ctl-row"><span class="lab">PD Class</span>
+<div class="seg" id="segCls" role="group" aria-label="PD Class">
+<button type="button" data-v="0">0</button><button type="button" data-v="1">1</button><button type="button" data-v="2">2</button><button type="button" data-v="3">3</button><button type="button" data-v="4">4</button><button type="button" data-v="5">5</button><button type="button" data-v="6">6</button><button type="button" data-v="7">7</button><button type="button" data-v="8">8</button>
+</div>
+</div>
+<div class="opts">
+<label class="ctl"><span class="lab">線材 Cable</span>
+<select id="selCable">
+<option value="ieee">IEEE 最壞值 Cat5e（12.5 Ω／100 m）</option>
+<option value="cat3">IEEE Type 1 最壞值 Cat3（20 Ω／100 m）</option>
+<option value="c5e">Cat5e 24 AWG 20 °C（8.4 Ω／100 m）</option>
+<option value="c6">Cat6 23 AWG 20 °C（6.7 Ω／100 m）</option>
+<option value="cca">劣質 CCA 銅包鋁（≈13 Ω／100 m）</option>
+</select></label>
+<div class="ctl"><span class="lab">線對 Pairs</span>
+<div class="seg" id="segPairs" role="group" aria-label="Pairs"><button type="button" data-v="2">2 對 2-pair</button><button type="button" data-v="4">4 對 4-pair</button></div></div>
+<div class="ctl"><span class="lab">整流 Bridge</span>
+<div class="seg" id="segBridge" role="group" aria-label="Bridge"><button type="button" data-v="sch">蕭特基 Schottky</button><button type="button" data-v="act">主動橋 Active FET</button></div></div>
+</div>
+<div class="params" id="params"></div>
+<div class="presets" id="presets"><span>範例 Presets：</span></div>
+</section>
+<section class="panel" aria-labelledby="h-res">
+<h2 id="h-res"><span class="step">2</span>結果 <span class="en">Result</span></h2>
+<div class="badges" id="badges"></div>
+<div class="bigres" id="bigres"></div>
+<div class="fall" id="fall"></div>
+</section>
+</div>
+<section class="panel" aria-labelledby="h-calc">
+<h2 id="h-calc"><span class="step">3</span>即時計算 <span class="en">Live calculation</span></h2>
+<div class="formulas" id="formulas"></div>
+</section>
+<section class="panel" aria-labelledby="h-why">
+<h2 id="h-why"><span class="step">4</span>Class 功率是怎麼來的 <span class="en">Where the class power numbers come from</span></h2>
+<div class="scroll-x">
+<table class="tbl">
+<thead><tr><th>類型 Type</th><th class="m">PSE 最低電壓</th><th class="m">線材電流</th><th class="m">迴路電阻（100 m）</th><th class="m">線損 I²R</th><th class="m">PSE 功率</th><th class="m">PD 可用</th></tr></thead>
+<tbody>
+<tr><td>Type 1 · af</td><td class="m">44 V</td><td class="m">0.35 A</td><td class="m">20 Ω（Cat3）</td><td class="m">0.35² × 20 = 2.45 W</td><td class="m">44 × 0.35 = 15.4 W</td><td class="m">12.95 W</td></tr>
+<tr><td>Type 2 · at</td><td class="m">50 V</td><td class="m">0.6 A</td><td class="m">12.5 Ω（Cat5e）</td><td class="m">0.6² × 12.5 = 4.5 W</td><td class="m">50 × 0.6 = 30 W</td><td class="m">25.5 W</td></tr>
+<tr><td>Type 3 · bt（Class 6）</td><td class="m">50 V</td><td class="m">1.2 A（每組 0.6）</td><td class="m">12.5 ∥ 12.5 = 6.25 Ω</td><td class="m">1.2² × 6.25 = 9.0 W</td><td class="m">50 × 1.2 = 60 W</td><td class="m">51 W</td></tr>
+<tr><td>Type 4 · bt（Class 8）</td><td class="m">52 V</td><td class="m">1.73 A（每組 0.87）</td><td class="m">6.25 Ω</td><td class="m">1.73² × 6.25 = 18.7 W</td><td class="m">52 × 1.73 = 90 W</td><td class="m">71.3 W</td></tr>
+</tbody>
+</table>
+</div>
+<p class="lede" style="margin-top:10px">規範就是用「最低 PSE 電壓 × 最大電流」減掉「最壞線材的 I²R」定出 PD 可用功率。四對線供電時兩組線對並聯，電阻減半、電流也分到兩組，所以 bt 能在同一條 Cat5e 上送到 90 W。
+<span class="en">PD power = minimum PSE voltage × maximum current − worst-case cable I²R. Four-pair powering halves the resistance and splits the current.</span></p>
+</section>
+<section class="panel" aria-labelledby="h-notes">
+<h2 id="h-notes"><span class="step">5</span>實務注意事項 <span class="en">Practical notes</span></h2>
+<div class="note-key"><span><span class="src ieee">IEEE</span> IEEE 802.3 規範數值</span><span><span class="src ti">ADI／TI</span> 晶片廠資料</span><span><span class="src add">補充</span> 一般設計經驗補充</span></div>
+<div class="ngroups">
+<div class="ngroup" style="--c:var(--accent)">
+<h3>線材 <span class="en">Cabling</span></h3>
+<ul>
+<li><b>用最壞值設計</b><span class="src ieee">IEEE</span><br>Class 功率已經假設 100 m、最壞的線材電阻。自己估算時若用 20 °C 的實際線阻，會低估損耗；線材溫度每升高 10 °C，銅電阻約增加 4%。<span class="en">Design with worst-case resistance; copper gains about 4% per 10 °C.</span></li>
+<li><b>避免 CCA 銅包鋁線</b><span class="src add">補充</span><br>CCA 電阻約是純銅的 1.5 倍以上，不符合 Cat5e／Cat6 規格。高功率 bt 在 CCA 長線上容易 V<sub>port</sub> 過低、線材與接頭發熱。<span class="en">Copper-clad aluminium has ~1.5× the resistance and runs hot at bt power.</span></li>
+<li><b>束線發熱</b><span class="src add">補充</span><br>大量 bt 埠的線綁在一起時，每條線都在發熱，線束中心溫度上升，實際可用距離可能要縮短（佈線標準對束線數量有建議）。<span class="en">Large bundles of bt cables heat each other; derate length accordingly.</span></li>
+</ul>
+</div>
+<div class="ngroup" style="--c:var(--on)">
+<h3>PD 前端損耗 <span class="en">Front-end loss</span></h3>
+<ul>
+<li><b>整流橋是最大的固定損耗</b><span class="src add">補充</span><br>電流路徑上永遠有兩顆二極體：蕭特基約 2 × 0.5 V × I。25.5 W 時約 0.5 A，損耗約 0.5 W（2%）；71 W 時約 1.4 A，損耗約 1.4 W，還集中在小封裝上。<span class="en">Two diodes always conduct: roughly 2 × VF × I.</span></li>
+<li><b>主動整流橋</b><span class="src ti">ADI</span><br>用 MOSFET 取代二極體（例如 ADI LT4321 理想二極體橋控制器），損耗變成 I²·R<sub>DS(on)</sub>，高功率時可省下大部分整流損耗與散熱面積。<span class="en">An ideal-diode bridge replaces the drops with I²·RDS(on).</span></li>
+<li><b>Hot-swap MOSFET 的 R<sub>DS(on)</sub></b><span class="src ti">TI</span><br>PD 控制器內建的 hot-swap 開關常見約 0.1–0.6 Ω。bt 高功率控制器會用較低阻抗或外接 MOSFET；選型時要把 I²R 算進熱設計。<span class="en">Integrated hot-swap switches are ~0.1–0.6 Ω; include the I²R in the thermal budget.</span></li>
+</ul>
+</div>
+<div class="ngroup" style="--c:var(--ok)">
+<h3>系統功率管理 <span class="en">System power management</span></h3>
+<ul>
+<li><b>依核准功率限載</b><span class="src add">補充</span><br>系統開機後先讀 PD 控制器回報的核准功率（TPL／TPH、T2P），再決定開幾個 radio、加熱器或馬達，避免被降級時超載斷電。<span class="en">Read the granted power first, then enable heavy loads.</span></li>
+<li><b>LLDP 動態調整</b><span class="src ieee">IEEE</span><br>at 以後可以透過 LLDP（Data Link Layer Classification）在上電後重新協商功率，讓 Switch 依實際需求分配電源預算。<span class="en">LLDP lets the PD renegotiate its power after power-up.</span></li>
+<li><b>bt Autoclass</b><span class="src ieee">IEEE</span><br>PD 上電後短時間內以最大功率運作，PSE 量測實際功耗並加上線損餘量，只保留真正需要的功率，Switch 的總預算可以接更多設備。<span class="en">Autoclass lets the PSE measure real consumption and reserve only what is needed.</span></li>
+</ul>
+</div>
+</div>
+</section>
+<footer>
+計算模型：線材以固定迴路電阻計算（2 對為單組線對迴路電阻，4 對為兩組並聯）；蕭特基整流在電流路徑上有兩顆二極體，損耗 2·V<sub>F</sub>·I；主動整流每組兩顆 MOSFET 導通，2 對時損耗 2·R<sub>FET</sub>·I²，4 對時兩組分流為 R<sub>FET</sub>·I²；hot-swap 損耗 R<sub>HS</sub>·I²；DC-DC 以固定效率計算。規範數值依 IEEE 802.3 Clause 33／145（Type 4 每組線對電流 0.87 A 為 90 W ÷ 52 V ÷ 2 推算）；線材電阻以 24 AWG 約 84 Ω／km、23 AWG 約 67 Ω／km（20 °C）估算。實際設計請以規範與晶片規格書為準。
+<br>Model: fixed loop resistance, two conducting diodes (2·VF·I) or FETs, hot-swap I²R and a fixed DC-DC efficiency. Always verify against the standard and datasheets.
+</footer>
+</div>
+<script src="assets/common.js"></script>
+<script>
+(function(){
+const RHO = {ieee:12.5, cat3:20, c5e:8.4, c6:6.7, cca:13.2};
+const P = {cls:4, cable:'ieee', pairs:2, bridge:'sch', vpse:50, len:100, vf:0.5, rf:50, rhs:0.3, eta:90, load:20, vout:12};
+const defs = [
+{k:'vpse', zh:'PSE 輸出電壓', en:'VPSE', min:44, max:57, step:0.5, fmt:v => v.toFixed(1) + ' V'},
+{k:'len', zh:'線長', en:'Cable length', min:1, max:100, step:1, fmt:v => v.toFixed(0) + ' m'},
+{k:'load', zh:'負載功率', en:'PLOAD', min:1, max:80, step:0.5, fmt:v => v.toFixed(1) + ' W'},
+{k:'vout', zh:'負載電壓', en:'VOUT', min:3.3, max:24, step:0.1, fmt:v => v.toFixed(1) + ' V'},
+{k:'eta', zh:'DC-DC 效率', en:'η', min:70, max:97, step:1, fmt:v => v.toFixed(0) + ' %'},
+{k:'rhs', zh:'Hot-swap 導通電阻', en:'RHS', min:0.05, max:1, step:0.01, fmt:v => (v*1000).toFixed(0) + ' mΩ'},
+{k:'vf', zh:'蕭特基壓降', en:'VF', min:0.3, max:1, step:0.01, fmt:v => v.toFixed(2) + ' V'},
+{k:'rf', zh:'主動橋 MOSFET 電阻', en:'RFET', min:10, max:200, step:1, fmt:v => v.toFixed(0) + ' mΩ'}
+];
+const presets = [
+{label:'IP Cam · af Class 0 · 7 W', v:{cls:0, cable:'c5e', pairs:2, bridge:'sch', vpse:48, len:100, load:7, vout:5, eta:85, rhs:0.6}},
+{label:'VoIP 話機 · Class 2 · 4.5 W', v:{cls:2, cable:'c5e', pairs:2, bridge:'sch', vpse:48, len:50, load:4.5, vout:3.3, eta:80, rhs:0.6}},
+{label:'Wi-Fi 6 AP · at Class 4 · 20 W', v:{cls:4, cable:'ieee', pairs:2, bridge:'sch', vpse:50, len:100, load:20, vout:12, eta:90, rhs:0.3}},
+{label:'Wi-Fi 7 AP · bt Class 6 · 42 W', v:{cls:6, cable:'ieee', pairs:4, bridge:'act', vpse:52, len:100, load:42, vout:12, eta:92, rhs:0.1}},
+{label:'PTZ 含加熱器 · Class 8 · 60 W', v:{cls:8, cable:'ieee', pairs:4, bridge:'act', vpse:54, len:100, load:60, vout:24, eta:93, rhs:0.05}},
+{label:'劣質 CCA 長線 · Class 4 · 22 W', v:{cls:4, cable:'cca', pairs:2, bridge:'sch', vpse:50, len:100, load:22, vout:12, eta:88, rhs:0.3}}
+];
+const sync = sliders(defs, P, $('params'), () => update());
+presets.forEach(p => {
+const b = document.createElement('button'); b.type = 'button'; b.textContent = p.label;
+b.addEventListener('click', () => { Object.assign(P, p.v); ui(); update(); });
+$('presets').appendChild(b);
+});
+segGroup('segCls', v => { P.cls = +v; update(); ui(); });
+segGroup('segPairs', v => { P.pairs = +v; update(); ui(); });
+segGroup('segBridge', v => { P.bridge = v; update(); ui(); });
+$('selCable').addEventListener('change', e => { P.cable = e.target.value; update(); });
+function ui(){
+const T = POE.types[POE.classes[P.cls].type];
+if (P.cls >= 5) P.pairs = 4;
+if (P.vpse < T.vpse[0]) P.vpse = T.vpse[0];
+$('p_vpse').min = T.vpse[0];
+setSeg('segCls', P.cls); setSeg('segPairs', P.pairs); setSeg('segBridge', P.bridge);
+$('segPairs').querySelector('[data-v="2"]').disabled = P.cls >= 5;
+$('selCable').value = P.cable;
+$('p_vf').closest('.param').hidden = P.bridge !== 'sch';
+$('p_rf').closest('.param').hidden = P.bridge !== 'act';
+sync();
+}
+function solve(P){
+const C = POE.classes[P.cls], T = POE.types[C.type];
+const np = P.pairs === 4 ? 2 : 1;
+const R = RHO[P.cable]*P.len/100/np;
+const rf = P.rf/1000, Vd = P.bridge === 'sch' ? 2*P.vf : 0, Rb = P.bridge === 'act' ? (np === 2 ? rf : 2*rf) : 0;
+const Rt = R + Rb + P.rhs, eta = P.eta/100, Pdc = P.load/eta;
+const disc = (P.vpse - Vd)**2 - 4*Rt*Pdc;
+const m = {C, T, np, R, Vd, Rb, Rt, eta, Pdc, ok: disc >= 0};
+if (m.ok) {
+const I = ((P.vpse - Vd) - Math.sqrt(disc))/(2*Rt);
+Object.assign(m, lossesAt(I));
+}
+// maximum load this class allows
+const Ilim = Math.min(
+R > 0 ? (P.vpse - Math.sqrt(Math.max(0, P.vpse**2 - 4*R*C.pd)))/(2*R) : C.pd/P.vpse,
+C.pse/P.vpse, T.icable*np);
+const L = lossesAt(Ilim);
+m.maxLoad = Math.max(0, (L.Ppd - L.Pbr - L.Phs)*eta);
+m.Imax = Ilim;
+return m;
+function lossesAt(I){
+const Vport = P.vpse - R*I, Pbr = Vd*I + Rb*I*I, Phs = P.rhs*I*I;
+return {I, Vport, Ppse:P.vpse*I, Pcab:R*I*I, Ppd:Vport*I, Pbr, Phs, Vbus:Vport - Vd - Rb*I - P.rhs*I, Pdcl:(Vport*I - Pbr - Phs)*(1 - eta)};
+}
+}
+function update(){
+const m = solve(P), F = fx, b = [];
+const C = m.C, T = m.T;
+if (!m.ok) {
+$('badges').innerHTML = '<span class="badge warn">這條線送不出這麼多功率：V² &lt; 4·R·P（超過最大傳輸功率）</span>';
+$('bigres').innerHTML = ''; $('fall').innerHTML = '';
+$('formulas').innerHTML = `<div class="f-row"><div class="name">最大可傳輸功率<span class="en">Max transferable</span></div><div class="eq">P<sub>max</sub> = <b>(VPSE − Vd)² / (4·R<sub>total</sub>)</b></div><div class="res">${F((P.vpse - m.Vd)**2/(4*m.Rt)*m.eta, 1)} W</div></div>`;
+return;
+}
+const perPair = m.I/m.np;
+b.push(m.Ppd <= C.pd + 1e-9 ? ['ok', `PD 端 ${F(m.Ppd, 1)} W ≤ Class ${C.c} 的 ${C.pd} W`] : ['warn', `PD 端 ${F(m.Ppd, 1)} W 超過 Class ${C.c} 的 ${C.pd} W`]);
+b.push(m.Ppse <= C.pse + 1e-9 ? ['ok', `PSE 端 ${F(m.Ppse, 1)} W ≤ ${C.pse} W`] : ['warn', `PSE 端 ${F(m.Ppse, 1)} W 超過 ${C.pse} W 分配`]);
+b.push(perPair <= T.icable + 1e-9 ? ['ok', `每組線對 ${F(perPair, 3)} A ≤ ${T.icable} A`] : ['warn', `每組線對 ${F(perPair, 3)} A 超過 ${T.icable} A`]);
+b.push(m.Vport >= T.vpd ? ['ok', `V<sub>port</sub> ${F(m.Vport, 1)} V ≥ ${T.vpd} V`] : ['warn', `V<sub>port</sub> ${F(m.Vport, 1)} V 低於 ${T.vpd} V 下限`]);
+b.push(['info', `這個 Class 最多可帶 ${F(m.maxLoad, 1)} W 負載`]);
+$('badges').innerHTML = b.map(([k, t]) => `<span class="badge ${k}">${t}</span>`).join('');
+$('bigres').innerHTML = [
+['PSE 要送 PSE output', F(m.Ppse, 1) + ' W', 'var(--accent)'],
+['PD 端 V<sub>port</sub>', F(m.Vport, 1) + ' V', 'var(--ink)'],
+['線材電流 I', F(m.I, 3) + ' A', 'var(--on)'],
+['端到端效率 End-to-end', F(P.load/m.Ppse*100, 1) + ' %', 'var(--ok)']
+].map(([l, v, c]) => `<div><span>${l}</span><b style="color:${c}">${v}</b></div>`).join('');
+// waterfall
+const mx = m.Ppse;
+let rem = m.Ppse;
+const rows = [['PSE 輸出', 'PSE output', 0, m.Ppse, 'var(--accent)', m.Ppse]];
+const loss = (zh, en, v, c) => { rows.push([zh, en, rem - v, rem, c, -v]); rem -= v; };
+loss('線損 I²R', 'Cable loss', m.Pcab, 'var(--warn)');
+rows.push(['PD 端輸入', 'At the PD', 0, rem, 'var(--teal)', rem]);
+loss('整流橋', 'Bridge', m.Pbr, 'var(--warn)');
+loss('Hot-swap', 'Hot-swap FET', m.Phs, 'var(--warn)');
+loss('DC-DC 損耗', 'DC-DC loss', m.Pdcl, 'var(--warn)');
+rows.push(['負載', 'Load', 0, rem, 'var(--ok)', rem]);
+$('fall').innerHTML = rows.map(([zh, en, a, z, c, v]) => `<div class="fall-row"><div class="bl">${zh}<span class="en">${en}</span></div>
+<div class="fall-track"><div class="fall-seg" style="left:${(a/mx*100).toFixed(2)}%;width:${Math.max(0.4, (z - a)/mx*100).toFixed(2)}%;background:${c}"></div></div>
+<div class="bv">${v < 0 ? '−' + F(-v, 2) : F(v, 1)} W</div></div>`).join('');
+// formulas
+const bridgeEq = P.bridge === 'sch' ? `P<sub>bridge</sub> = <b>2 · VF · I</b> = 2 × ${F(P.vf)} × ${F(m.I, 3)}` :
+`P<sub>bridge</sub> = <b>${m.np === 2 ? 'RFET' : '2·RFET'} · I²</b>（${m.np === 2 ? '兩組分流' : '一組兩顆'}）= ${F(m.Rb*1000, 0)} mΩ × ${F(m.I, 3)}²`;
+const fr = [
+['線材迴路電阻', 'Loop resistance', `R = <b>${RHO[P.cable]} Ω／100 m × ${P.len} m${m.np === 2 ? ' ÷ 2（兩組並聯）' : ''}</b>`, F(m.R, 2) + ' Ω'],
+['DC-DC 輸入功率', 'DC-DC input', `P<sub>DC</sub> = <b>P<sub>LOAD</sub> / η</b> = ${F(P.load, 1)} / ${F(m.eta, 2)}`, F(m.Pdc, 2) + ' W'],
+['線材電流（解二次方程式）', 'Cable current (quadratic)', `(R + R<sub>bridge</sub> + R<sub>HS</sub>)·I² − (VPSE − Vd)·I + P<sub>DC</sub> = 0 → <b>I = [(VPSE − Vd) − √((VPSE − Vd)² − 4·R<sub>t</sub>·P<sub>DC</sub>)] / (2·R<sub>t</sub>)</b>`, F(m.I, 3) + ' A'],
+['線損', 'Cable loss', `P<sub>cable</sub> = <b>R · I²</b> = ${F(m.R, 2)} × ${F(m.I, 3)}²`, F(m.Pcab, 2) + ' W'],
+['PD 端電壓', 'Port voltage', `V<sub>port</sub> = <b>VPSE − R · I</b> = ${F(P.vpse, 1)} − ${F(m.R, 2)} × ${F(m.I, 3)}`, F(m.Vport, 2) + ' V'],
+['整流橋損耗', 'Bridge loss', bridgeEq, F(m.Pbr, 2) + ' W'],
+['Hot-swap 損耗', 'Hot-swap loss', `P<sub>HS</sub> = <b>R<sub>HS</sub> · I²</b> = ${F(P.rhs, 2)} × ${F(m.I, 3)}²`, F(m.Phs, 2) + ' W'],
+['DC-DC 輸入電壓', 'DC-DC input voltage', `V<sub>bus</sub> = <b>V<sub>port</sub> − 整流壓降 − R<sub>HS</sub>·I</b>`, F(m.Vbus, 2) + ' V'],
+['負載電流', 'Load current', `I<sub>OUT</sub> = <b>P<sub>LOAD</sub> / V<sub>OUT</sub></b> = ${F(P.load, 1)} / ${F(P.vout, 1)}`, F(P.load/P.vout, 2) + ' A'],
+['此 Class 最大負載', 'Max load for this class', `I<sub>max</sub> = min(PD 功率上限, PSE 功率 ÷ VPSE, 線對電流上限 × 組數) = ${F(m.Imax, 3)} A → <b>(P<sub>PD</sub> − 整流 − hot-swap) × η</b>`, F(m.maxLoad, 1) + ' W']
+];
+$('formulas').innerHTML = fr.map(([zh, en, eq, res]) => `<div class="f-row"><div class="name">${zh}<span class="en">${en}</span></div><div class="eq">${eq}</div><div class="res">${res}</div></div>`).join('');
+}
+ui(); update();
+})();
+</script>
+</body>
+</html>

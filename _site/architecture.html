@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PoE PD 架構總覽</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="assets/series.css">
+<style>
+#chain{min-width:760px}
+.pin-t{font:700 12px var(--mono);fill:var(--ink)}
+.pol-t{font:800 14px var(--mono)}
+.blk{fill:var(--paper-2);stroke:var(--wire);stroke-width:1.8}
+.blk-t{fill:var(--ink);font:700 13px var(--body)}
+.blk-s{fill:var(--muted);font:500 11px var(--body)}
+.dio{transition:fill .2s,stroke .2s,opacity .2s}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="series" aria-label="系列 Series"><span class="lab">系列 Series</span><a href="./"><b>HOME</b>系列首頁</a><span class="cur" aria-current="page"><b>01 ARCHITECTURE</b>架構總覽</span><a href="handshake.html"><b>02 HANDSHAKE</b>握手狀態機</a><a href="power-budget.html"><b>03 POWER BUDGET</b>功率預算</a><a href="dcdc-topology.html"><b>04 DC-DC</b>拓撲選擇</a><a href="https://dcdc-topology-series.vercel.app/" target="_blank" rel="noopener"><b>↗ DC-DC</b>拓撲系列</a></nav>
+<header>
+<div>
+<div class="eyebrow">PoE PD Series · 01</div>
+<h1>PoE PD 架構總覽<small>Powered device architecture · RJ45 → bridge → PD controller → DC-DC</small></h1>
+</div>
+<div class="chip-dc">37–57 V <span>→</span> 12 / 5 / 3.3 V</div>
+<p class="lede">PoE PD（受電端設備）不是單一顆電源 IC，而是<b>兩段式架構</b>：前段是和 PSE 握手、把電安全接進來的 <b>PD 介面</b>（中心抽頭 → 整流橋 → TVS → PD 控制器與 hot-swap 開關），後段是把 37–57 V 降成板上電壓的 <b>DC-DC 轉換器</b>。下方電路可切換供電線對與極性，看電流實際走哪兩顆二極體。
+<span class="en">A PoE powered device is a two-stage system: a PD interface front end (center taps, polarity bridge, TVS, PD controller with hot-swap switch) followed by a DC-DC converter that turns 37–57 V into board rails. Switch the pair set and polarity to see which diodes conduct.</span></p>
+</header>
+<section class="panel" aria-labelledby="h-chain">
+<h2 id="h-chain"><span class="step">1</span>電源鏈與電流路徑 <span class="en">Power chain &amp; current path</span></h2>
+<div class="ctl-row">
+<span class="lab">供電線對 Pair set</span>
+<div class="seg" id="segMode" role="group" aria-label="Pair set">
+<button type="button" data-v="A">ALT A 資料線對 1,2／3,6</button><button type="button" data-v="B">ALT B 備用線對 4,5／7,8</button><button type="button" data-v="4P">4 對 4-pair（bt）</button>
+</div>
+</div>
+<div class="ctl-row">
+<span class="lab">ALT A 極性</span>
+<div class="seg" id="segPa" role="group" aria-label="ALT A polarity"><button type="button" data-v="1">1,2 為 +</button><button type="button" data-v="2">3,6 為 +（交叉 crossover）</button></div>
+<span class="lab">ALT B 極性</span>
+<div class="seg" id="segPb" role="group" aria-label="ALT B polarity"><button type="button" data-v="1">4,5 為 +</button><button type="button" data-v="2">7,8 為 +（反接）</button></div>
+<button id="btnPlay" class="primary" type="button">暫停 Pause</button>
+</div>
+<div class="scroll-x">
+<svg id="chain" class="chain-svg" viewBox="0 0 1000 440" role="img" aria-label="PoE PD 電源鏈：RJ45、網路變壓器中心抽頭、兩組整流橋、TVS、偵測電容、PD 控制器與 hot-swap 開關、Cbulk、DC-DC、負載">
+<defs><filter id="blur" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="3"/></filter></defs>
+<g id="gFlow"></g>
+<g id="gStatic"></g>
+</svg>
+</div>
+<div class="legend">
+<span><i style="border-color:var(--on)"></i>正端電流 Current out (+)</span>
+<span><i style="border-color:var(--off)"></i>回流 Return (−)</span>
+<span>亮色二極體 = 導通；每組整流橋永遠只有兩顆導通 Lit diodes conduct — always two per active bridge</span>
+</div>
+<div class="badges" id="pathTxt" style="margin-top:10px"></div>
+</section>
+<section class="panel" aria-labelledby="h-stage">
+<h2 id="h-stage"><span class="step">2</span>每一段在做什麼 <span class="en">What each stage does</span></h2>
+<div class="stage-cards">
+<article class="stage" style="--c:var(--accent)"><h3><span class="no">①</span>RJ45 與網路變壓器</h3>
+<p>電從變壓器線路側的<b>中心抽頭</b>取出，資料訊號仍經變壓器耦合到 PHY，兩者共用同一對線。</p><p class="en">Power is taken from the line-side center taps; data still couples through the transformer.</p></article>
+<article class="stage" style="--c:var(--on)"><h3><span class="no">②</span>極性校正整流橋</h3>
+<p>ALT A 可能遇到交叉線、ALT B 也可能反接，所以<b>兩組線對各需要一個整流橋</b>。低功率用蕭特基，高功率改用主動（MOSFET）整流。</p><p class="en">Either pair set may arrive in either polarity, so each needs its own bridge.</p></article>
+<article class="stage" style="--c:var(--warn)"><h3><span class="no">③</span>TVS 與偵測電容</h3>
+<p>TVS（常見 SMAJ58A）擋雷擊與熱插拔突波；V<sub>port</sub> 端只能放 0.05–0.12 µF 小電容，否則偵測失敗。</p><p class="en">A 58 V TVS clamps surges; only ~0.1 µF may sit on Vport.</p></article>
+<article class="stage" style="--c:var(--teal)"><h3><span class="no">④</span>PD 控制器</h3>
+<p>提供 25 kΩ 偵測特徵、Class 電流，UVLO 後以限流打開<b>低側 hot-swap MOSFET</b>（VSS → RTN），充飽後送 <b>PG</b>。</p><p class="en">Signature, class current, current-limited low-side hot-swap switch and PG.</p></article>
+<article class="stage" style="--c:var(--off)"><h3><span class="no">⑤</span>C<sub>bulk</sub> 與 DC-DC</h3>
+<p>C<sub>bulk</sub> 接在 RTN 之後，偵測時看不到。DC-DC 由 PG 啟動，依功率與安規選 Flyback、Forward 或非隔離 Buck。</p><p class="en">Bulk capacitance sits after RTN; the DC-DC starts on PG.</p></article>
+<article class="stage" style="--c:var(--ok)"><h3><span class="no">⑥</span>負載</h3>
+<p>系統讀取 PD 控制器回報的核准功率（TPL／TPH、T2P），再決定能開多少負載。</p><p class="en">The system reads the granted power before enabling heavy loads.</p></article>
+</div>
+</section>
+<div class="grid-2">
+<section class="panel" aria-labelledby="h-loss">
+<h2 id="h-loss"><span class="step">3</span>整流橋損耗：蕭特基 vs 主動橋 <span class="en">Bridge loss</span></h2>
+<div class="params" id="params"></div>
+<div class="bars" id="bars" style="margin-top:14px"></div>
+<div class="formulas" id="formulas" style="margin-top:12px"></div>
+</section>
+<section class="panel" aria-labelledby="h-std">
+<h2 id="h-std"><span class="step">4</span>三代標準 <span class="en">af / at / bt at a glance</span></h2>
+<div class="scroll-x">
+<table class="tbl" style="min-width:460px">
+<thead><tr><th>標準</th><th>類型</th><th class="m">PSE 輸出</th><th class="m">PD 可用</th><th class="m">PD 電壓</th><th>線對</th></tr></thead>
+<tbody>
+<tr><td>802.3af</td><td>Type 1（Class 0–3）</td><td class="m">15.4 W</td><td class="m">12.95 W</td><td class="m">37–57 V</td><td>2 對</td></tr>
+<tr><td>802.3at</td><td>Type 2（Class 4）</td><td class="m">30 W</td><td class="m">25.5 W</td><td class="m">42.5–57 V</td><td>2 對</td></tr>
+<tr><td>802.3bt</td><td>Type 3（Class 5–6）</td><td class="m">45／60 W</td><td class="m">40／51 W</td><td class="m">42.5–57 V</td><td>4 對</td></tr>
+<tr><td>802.3bt</td><td>Type 4（Class 7–8）</td><td class="m">75／90 W</td><td class="m">62／71.3 W</td><td class="m">41.1–57 V</td><td>4 對</td></tr>
+</tbody>
+</table>
+</div>
+<p class="lede" style="margin-top:10px;font-size:13.5px">PSE 輸出與 PD 可用的差額就是 100 m 線材的 I²R 損耗，詳見「03 功率預算」。bt 也允許 Class 1–4 的 Type 3 PD 用 4 對線供電。
+<span class="en">The gap between PSE and PD power is worst-case cable loss; see page 03.</span></p>
+<div class="example"><b>Single-signature vs Dual-signature</b>
+<div>bt 的 PD 可以兩組線對共用一個偵測／分級特徵（single-signature，最常見），也可以兩組各自獨立偵測與分級（dual-signature，兩組可分別要求功率）。這和「多事件分級」是兩件不同的事。</div>
+<span class="en">Single-signature PDs share one signature across both pair sets; dual-signature PDs present one per pair set. This is separate from multi-event classification.</span></div>
+</section>
+</div>
+<section class="panel" aria-labelledby="h-notes">
+<h2 id="h-notes"><span class="step">5</span>實務注意事項 <span class="en">Practical notes</span></h2>
+<div class="note-key"><span><span class="src ieee">IEEE</span> IEEE 802.3 規範</span><span><span class="src ti">ADI／TI</span> 晶片廠資料</span><span><span class="src add">補充</span> 一般設計經驗補充</span></div>
+<div class="ngroups">
+<div class="ngroup" style="--c:var(--warn)">
+<h3>PCB Layout <span class="en">佈局</span></h3>
+<ul>
+<li><b>TVS 緊貼整流橋輸出</b><span class="src add">補充</span><br>TVS 要放在整流橋後、PD 控制器 VDD／VSS 腳旁邊，走線短而寬，突波電流才不會先流過控制器。<span class="en">Place the TVS right at the bridge output, next to the controller pins.</span></li>
+<li><b>中心抽頭與 Bob Smith 終端</b><span class="src add">補充</span><br>中心抽頭走線要能承載 PoE 電流（bt 每組約 0.6–0.9 A）；Bob Smith 的 75 Ω＋1 nF／2 kV 電容接到機殼地，影響 EMI 與突波路徑。<span class="en">Size center-tap traces for PoE current; the Bob Smith network goes to chassis via a 2 kV cap.</span></li>
+<li><b>PoE 前端與機殼隔離</b><span class="src ieee">IEEE</span><br>PD 介面（整個 PoE 輸入側）與使用者可接觸的導體之間要有 1500 Vrms 等級的電氣隔離，佈局要留爬電距離，隔離帶下方不可鋪銅。<span class="en">Keep 1500 Vrms-class isolation between the PoE side and user-accessible conductors.</span></li>
+</ul>
+</div>
+<div class="ngroup" style="--c:var(--accent)">
+<h3>選料 <span class="en">Component selection</span></h3>
+<ul>
+<li><b>蕭特基整流橋的漏電流</b><span class="src add">補充</span><br>高溫下蕭特基漏電流變大，會讓 25 kΩ 偵測特徵變小（尤其兩組橋並聯時）。選低漏電型號，或改用主動整流。<span class="en">Hot Schottky leakage pulls the 25 kΩ signature low.</span></li>
+<li><b>主動整流橋控制器</b><span class="src ti">ADI</span><br>例如 ADI LT4321 驅動 8 顆 MOSFET 做成理想二極體整流橋，高功率 bt 設計常用，可省下約 2·V<sub>F</sub>·I 的損耗。<span class="en">Ideal-diode bridge controllers such as LT4321 remove most bridge loss.</span></li>
+<li><b>Hot-swap 開關規格</b><span class="src ti">TI</span><br>PD 控制器的 hot-swap 開關接在低側（VSS → RTN），R<sub>DS(on)</sub> 與限流值要配合 Class；bt 高功率可選內建低阻抗開關或外接 MOSFET 的控制器。<span class="en">The hot-swap switch is low-side; match RDS(on) and current limit to the class.</span></li>
+</ul>
+</div>
+<div class="ngroup" style="--c:var(--on)">
+<h3>設計提醒 <span class="en">Design reminders</span></h3>
+<ul>
+<li><b>外接變壓器（Aux）優先權</b><span class="src ti">TI</span><br>同時有 PoE 與牆插變壓器時要決定誰供電。常見做法是從 PD 控制器後端（或 DC-DC 輸入）以二極體 ORing 接入，並用控制器的 APD 腳位讓 Aux 優先。<span class="en">Decide PoE/adapter priority; controllers offer an APD pin for adapter priority.</span></li>
+<li><b>DC-DC 由 PG 啟動</b><span class="src ti">TI</span><br>把 PG 接到 DC-DC 的 EN 或 UVLO，確保 C<sub>bulk</sub> 充飽後才抽負載電流，否則會觸發 PSE 過流而反覆重啟（見「02 握手狀態機」故障情境）。<span class="en">Gate the DC-DC with PG to avoid inrush overload.</span></li>
+<li><b>整合型 PD＋DC-DC 晶片</b><span class="src add">補充</span><br>不少晶片把 PD 介面與 DC-DC 控制器做在一起（PD＋Flyback 控制器等），可減少零件數；選型時注意是否支援 bt 多事件分級與自動 MPS。<span class="en">Many ICs combine the PD interface with a DC-DC controller.</span></li>
+</ul>
+</div>
+</div>
+</section>
+<footer>
+依據：IEEE 802.3-2022 Clause 33／145 的 PD 要求；主動整流參考 ADI LT4321 產品資料；hot-swap、PG、APD 等腳位名稱參考 TI PD 控制器規格書（如 TPS2372／TPS2373）。電路為教學示意，省略了 PHY 側繞組、共模扼流圈、Bob Smith 終端與隔離回授細節；實際設計請以規範與晶片規格書為準。
+<br>Illustrative schematic based on IEEE 802.3 Clauses 33 and 145 and vendor PD controller datasheets; PHY windings, chokes and feedback details are omitted.
+</footer>
+</div>
+<script src="assets/common.js"></script>
+<script>
+(function(){
+const P = {mode:'A', pa:'1', pb:'1', ppd:25.5, vport:50, vf:0.5, rf:50};
+const S = $('gStatic'), FL = $('gFlow');
+const PIN = {1:62, 2:92, 3:142, 6:172, 4:238, 5:268, 7:318, 8:348};
+const CT = {A1:77, A2:157, B1:253, B2:333};
+const BR = {A:{cx:300, cy:117}, B:{cx:300, cy:293}}, H = 40;
+const W = (d, p, extra) => svgEl('path', Object.assign({d, class:'wire'}, extra || {}), p || S);
+const T = (x, y, t, cls, extra) => svgEl('text', Object.assign({x, y, class:cls || 'blk-s'}, extra || {}), S, t);
+// ---- RJ45 + magnetics ----
+svgEl('rect', {x:14, y:40, width:50, height:330, rx:8, class:'blk'}, S);
+T(39, 30, 'RJ45', 'blk-t', {'text-anchor':'middle'});
+T(170, 22, '網路變壓器 Magnetics（資料耦合到 PHY）', 'blk-s', {'text-anchor':'middle'});
+const polTxt = {};
+for (const p in PIN) {
+const y = PIN[p];
+W(`M64,${y} H120`);
+T(56, y + 4, p, 'pin-t', {'text-anchor':'end'});
+polTxt[p] = T(80, y - 4, '', 'pol-t');
+}
+[[1, 2], [3, 6], [4, 5], [7, 8]].forEach(([a, b]) => {
+const y0 = PIN[a], y1 = PIN[b], n = 3, h = (y1 - y0)/n;
+let d = `M120,${y0}`;
+for (let i = 0; i < n; i++) d += ` a${h/2},${h/2} 0 0 1 0,${h}`;
+W(d, S, {'stroke-width':2.6});
+svgEl('line', {x1:142, x2:142, y1:y0 + 2, y2:y1 - 2, stroke:'var(--muted)', 'stroke-width':1.4, 'stroke-dasharray':'3 3'}, S);
+});
+for (const k in CT) { W(`M120,${CT[k]} H${BR[k[0]].cx}`); svgEl('circle', {cx:120 + 0.1, cy:CT[k], r:3.4, class:'node'}, S); }
+T(186, CT.A1 - 6, 'CT 1,2', 'blk-s'); T(186, CT.A2 - 6, 'CT 3,6', 'blk-s');
+T(186, CT.B1 - 6, 'CT 4,5', 'blk-s'); T(186, CT.B2 - 6, 'CT 7,8', 'blk-s');
+// ---- bridges ----
+const dio = {};
+function diode(key, x1, y1, x2, y2){
+const g = svgEl('g', {class:'dio'}, S);
+svgEl('line', {x1, y1, x2, y2, class:'wire'}, g);
+const mx = (x1 + x2)/2, my = (y1 + y2)/2, a = Math.atan2(y2 - y1, x2 - x1)*180/Math.PI;
+const tri = svgEl('polygon', {points:'-8,-8 -8,8 7,0', transform:`translate(${mx},${my}) rotate(${a})`, fill:'var(--wire)'}, g);
+svgEl('line', {x1:7, y1:-8, x2:7, y2:8, stroke:'var(--wire)', 'stroke-width':3, transform:`translate(${mx},${my}) rotate(${a})`}, g);
+dio[key] = {g, tri};
+}
+for (const b in BR) {
+const {cx, cy} = BR[b];
+diode(b + 'LT', cx - H, cy, cx, cy - H);
+diode(b + 'TR', cx, cy - H, cx + H, cy);
+diode(b + 'LB', cx - H, cy, cx, cy + H);
+diode(b + 'BR', cx, cy + H, cx + H, cy);
+T(cx, cy + 4, b === 'A' ? '橋 A' : '橋 B', 'blk-t', {'text-anchor':'middle'});
+W(`M${cx + H},${cy} H390`); W(`M${cx - H},${cy} H225`);
+}
+W('M390,293 V36 H845 V120');
+W('M225,117 V410 H560 V320');
+W('M670,320 V410 H845 V330');
+T(400, 30, '+ 正端 (VDD)', 'blk-s'); T(236, 428, 'VSS', 'blk-s'); T(700, 428, 'RTN', 'blk-s');
+// TVS
+W('M450,36 V200 M450,248 V410');
+svgEl('polygon', {points:'440,200 460,200 450,224', fill:'var(--wire)'}, S);
+svgEl('polygon', {points:'440,248 460,248 450,224', fill:'var(--wire)'}, S);
+W('M438,218 L442,224 H458 L462,230');
+T(466, 222, 'TVS', 'blk-t'); T(466, 238, '≈ 58 V', 'blk-s');
+// Cdet
+W('M505,36 V218 M505,230 V410');
+svgEl('path', {d:'M491,218 H519 M491,230 H519', class:'plate'}, S);
+T(522, 212, 'C', 'blk-t'); T(522, 244, '0.1 µF', 'blk-s');
+// PD controller
+svgEl('rect', {x:540, y:150, width:150, height:170, rx:10, class:'blk'}, S);
+W('M600,36 V150');
+T(615, 172, 'PD 控制器', 'blk-t', {'text-anchor':'middle'});
+T(615, 190, '偵測 25 kΩ · 分級', 'blk-s', {'text-anchor':'middle'});
+T(615, 206, 'UVLO · PG · MPS', 'blk-s', {'text-anchor':'middle'});
+svgEl('line', {x1:580, y1:300, x2:650, y2:300, class:'wire'}, S);
+W('M560,320 V300 H585 M645,300 H670 V320');
+svgEl('line', {x1:590, y1:292, x2:640, y2:292, stroke:'var(--wire)', 'stroke-width':3}, S);
+svgEl('line', {x1:615, y1:292, x2:615, y2:270, stroke:'var(--wire)', 'stroke-width':2}, S);
+T(615, 262, 'Hot-swap', 'blk-t', {'text-anchor':'middle'});
+T(560, 336, 'VSS', 'blk-s', {'text-anchor':'middle'}); T(670, 336, 'RTN', 'blk-s', {'text-anchor':'middle'});
+W('M690,220 H780', S, {'stroke-dasharray':'5 4'}); T(700, 214, 'PG → EN', 'blk-s');
+// Cbulk
+W('M740,36 V218 M740,230 V410');
+svgEl('path', {d:'M726,218 H754 M726,230 H754', class:'plate'}, S);
+T(746, 250, 'C', 'blk-t'); T(746, 266, 'bulk', 'blk-s');
+// DC-DC
+svgEl('rect', {x:780, y:120, width:130, height:210, rx:10, class:'blk'}, S);
+svgEl('line', {x1:845, y1:150, x2:845, y2:320, stroke:'var(--muted)', 'stroke-width':1.5, 'stroke-dasharray':'4 4'}, S);
+T(845, 142, 'DC-DC', 'blk-t', {'text-anchor':'middle'});
+T(812, 240, '初級', 'blk-s', {'text-anchor':'middle'}); T(878, 240, '次級', 'blk-s', {'text-anchor':'middle'});
+T(845, 346, '隔離 isolation', 'blk-s', {'text-anchor':'middle'});
+W('M910,200 H960 V215 M910,290 H960 V275');
+W('M960,215 l10,5 l-20,10 l20,10 l-20,10 l20,10 l-10,5');
+T(930, 190, 'V', 'blk-t'); T(972, 250, '負載', 'blk-t'); T(972, 266, 'Load', 'blk-s');
+[[390, 117], [390, 36], [225, 293], [600, 36], [450, 36], [505, 36], [740, 36], [450, 410], [505, 410], [740, 410]].forEach(([x, y]) => svgEl('circle', {cx:x, cy:y, r:3.4, class:'node'}, S));
+// stage numbers
+[[39, 392, '①'], [300, 392, '②'], [478, 392, '③'], [615, 136, '④'], [845, 108, '⑤'], [972, 300, '⑥']].forEach(([x, y, t]) => T(x, y, t, 'blk-t', {'text-anchor':'middle', fill:'var(--accent)'}));
+// ---- flows ----
+function paths(){
+const out = [];
+const ret = 'M845,330 V410 H670 V320 V300 H560 V320 V410 H225 ';
+const bridge = (b, topPos) => {
+const {cx, cy} = BR[b], y1 = cy - H, y2 = cy + H;
+const [pinsP, pinsN] = b === 'A' ? (topPos ? [[1, 2], [3, 6]] : [[3, 6], [1, 2]]) : (topPos ? [[4, 5], [7, 8]] : [[7, 8], [4, 5]]);
+const yP = topPos ? y1 : y2, yN = topPos ? y2 : y1;
+pinsP.forEach(p => out.push(['on', `M64,${PIN[p]} H120 V${yP}`]));
+out.push(['on', `M120,${yP} H${cx} L${cx + H},${cy} H390 V36 H845 V120`]);
+out.push(['off', ret + `V${cy} H${cx - H} L${cx},${yN} H120`]);
+pinsN.forEach(p => out.push(['off', `M120,${yN} V${PIN[p]} H64`]));
+return {b, topPos};
+};
+const act = [];
+if (P.mode !== 'B') act.push(bridge('A', P.pa === '1'));
+if (P.mode !== 'A') act.push(bridge('B', P.pb === '1'));
+return {out, act};
+}
+let flows = [];
+function draw(){
+const {out, act} = paths();
+FL.innerHTML = '';
+flows = out.map(([k, d]) => {
+const c = k === 'on' ? 'var(--on)' : 'var(--off)';
+svgEl('path', {d, class:'glow', stroke:c, filter:'url(#blur)'}, FL);
+return svgEl('path', {d, class:'flow', stroke:c}, FL);
+});
+for (const k in dio) { dio[k].g.style.opacity = .35; dio[k].tri.setAttribute('fill', 'var(--wire)'); }
+const lit = [];
+act.forEach(({b, topPos}) => {
+const pair = topPos ? [b + 'TR', b + 'LB'] : [b + 'BR', b + 'LT'];
+pair.forEach((k, i) => { dio[k].g.style.opacity = 1; dio[k].tri.setAttribute('fill', i ? 'var(--off)' : 'var(--on)'); });
+lit.push(`橋 ${b}：${topPos ? '上端 +' : '下端 +'}，導通 ${pair.map(k => ({TR:'右上',LB:'左下',BR:'右下',LT:'左上'})[k.slice(1)]).join('、')}`);
+});
+for (const p in PIN) polTxt[p].textContent = '';
+const setPol = (plus, minus) => { plus.forEach(p => { polTxt[p].textContent = '+'; polTxt[p].setAttribute('fill', 'var(--on)'); }); minus.forEach(p => { polTxt[p].textContent = '−'; polTxt[p].setAttribute('fill', 'var(--off)'); }); };
+if (P.mode !== 'B') P.pa === '1' ? setPol([1, 2], [3, 6]) : setPol([3, 6], [1, 2]);
+if (P.mode !== 'A') P.pb === '1' ? setPol([4, 5], [7, 8]) : setPol([7, 8], [4, 5]);
+$('pathTxt').innerHTML = lit.map(t => `<span class="badge info">${t}</span>`).join('') +
+`<span class="badge ok">不論極性，VDD 永遠是 +、VSS 永遠是 −</span>` +
+(P.mode === '4P' ? '<span class="badge info">4 對：兩組橋並聯輸出，電流各分一半</span>' : '');
+loss();
+}
+segGroup('segMode', v => { P.mode = v; draw(); });
+segGroup('segPa', v => { P.pa = v; draw(); });
+segGroup('segPb', v => { P.pb = v; draw(); });
+setSeg('segMode', P.mode); setSeg('segPa', P.pa); setSeg('segPb', P.pb);
+// ---- bridge loss ----
+const defs = [
+{k:'ppd', zh:'PD 輸入功率', en:'PPD', min:1, max:71.3, step:0.1, fmt:v => v.toFixed(1) + ' W'},
+{k:'vport', zh:'PD 端電壓', en:'Vport', min:37, max:57, step:0.5, fmt:v => v.toFixed(1) + ' V'},
+{k:'vf', zh:'蕭特基壓降', en:'VF', min:0.3, max:1, step:0.01, fmt:v => v.toFixed(2) + ' V'},
+{k:'rf', zh:'MOSFET 導通電阻', en:'RDS(on)', min:10, max:200, step:1, fmt:v => v.toFixed(0) + ' mΩ'}
+];
+sliders(defs, P, $('params'), () => loss());
+function loss(){
+const I = P.ppd/P.vport, np = P.mode === '4P' ? 2 : 1, rf = P.rf/1000;
+const sch = 2*P.vf*I, act = np === 2 ? rf*I*I : 2*rf*I*I;
+const mx = Math.max(sch, act, 1e-6);
+const items = [['蕭特基整流 Schottky', sch, 'var(--warn)'], ['主動整流 Active FET', act, 'var(--ok)']];
+$('bars').innerHTML = items.map(([l, v, c]) => `<div class="bar-row"><div class="bl">${l}<span class="en">${fx(v/P.ppd*100, 2)} % of P<sub>PD</sub></span></div>
+<div class="bar-track"><div class="bar-fill" style="width:${(v/mx*100).toFixed(1)}%;background:${c}"></div></div><div class="bv">${fx(v, 2)} W</div></div>`).join('');
+const rows = [
+['PD 輸入電流', 'Input current', `I = <b>P<sub>PD</sub> / V<sub>port</sub></b> = ${fx(P.ppd, 1)} / ${fx(P.vport, 1)}`, fx(I, 3) + ' A'],
+['蕭特基損耗', 'Schottky loss', `<b>2 · VF · I</b>（路徑上永遠兩顆）= 2 × ${fx(P.vf)} × ${fx(I, 3)}`, fx(sch, 2) + ' W'],
+['主動橋損耗', 'Active bridge loss', np === 2 ? `<b>2 組 × 2 顆 × RDS · (I/2)² = RDS · I²</b>` : `<b>2 顆 × RDS · I²</b> = 2 × ${P.rf} mΩ × ${fx(I, 3)}²`, fx(act, 3) + ' W'],
+['每顆蕭特基平均電流', 'Per-diode current', np === 2 ? '<b>I / 2</b>（兩組分流）' : '<b>I</b>（兩顆串在路徑上）', fx(I/np, 3) + ' A']
+];
+$('formulas').innerHTML = rows.map(([zh, en, eq, res]) => `<div class="f-row"><div class="name">${zh}<span class="en">${en}</span></div><div class="eq">${eq}</div><div class="res">${res}</div></div>`).join('');
+}
+// ---- animation ----
+let playing = !REDUCED, off = 0, last = null;
+function frame(ts){
+if (last == null) last = ts;
+const dt = Math.min(0.05, (ts - last)/1000); last = ts;
+if (playing) { off -= 60*dt; flows.forEach(f => f.style.strokeDashoffset = off); }
+requestAnimationFrame(frame);
+}
+$('btnPlay').addEventListener('click', () => { playing = !playing; $('btnPlay').textContent = playing ? '暫停 Pause' : '播放 Play'; });
+if (!playing) $('btnPlay').textContent = '播放 Play';
+draw();
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
