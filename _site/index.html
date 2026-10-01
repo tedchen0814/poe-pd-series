@@ -16,7 +16,7 @@
 </head>
 <body>
 <div class="wrap">
-<nav class="series" aria-label="系列 Series"><span class="lab">系列 Series</span><span class="cur" aria-current="page"><b>HOME</b>系列首頁</span><a href="architecture.html"><b>01 ARCHITECTURE</b>架構總覽</a><a href="handshake.html"><b>02 HANDSHAKE</b>握手狀態機</a><a href="power-budget.html"><b>03 POWER BUDGET</b>功率預算</a><a href="dcdc-topology.html"><b>04 DC-DC</b>拓撲選擇</a><a href="pse-switch.html"><b>05 PSE</b>供電端與預算</a><a href="lldp.html"><b>06 LLDP</b>功率協商</a><a href="https://dcdc-topology-series.vercel.app/" target="_blank" rel="noopener"><b>↗ DC-DC</b>拓撲系列</a></nav>
+<nav class="series" aria-label="系列 Series"><span class="lab">系列 Series</span><span class="cur" aria-current="page"><b>HOME</b>系列首頁</span><a href="architecture.html"><b>01 ARCHITECTURE</b>架構總覽</a><a href="handshake.html"><b>02 HANDSHAKE</b>握手狀態機</a><a href="power-budget.html"><b>03 POWER BUDGET</b>功率預算</a><a href="dcdc-topology.html"><b>04 DC-DC</b>拓撲選擇</a><a href="pse-switch.html"><b>05 PSE</b>供電端與預算</a><a href="lldp.html"><b>06 LLDP</b>功率協商</a><a href="https://dcdc-topology-series.vercel.app/" target="_blank" rel="noopener"><b>↗ DC-DC</b>拓撲系列</a><a href="https://multiphase-vrm-series.vercel.app/" target="_blank" rel="noopener"><b>↗ 多相 VRM</b>CPU 核心供電</a></nav>
 <header>
 <div>
 <div class="eyebrow">PoE PD Series</div>
@@ -103,6 +103,14 @@
 <li>「04 拓撲選擇」決定 DC-DC，再到 <a href="https://dcdc-topology-series.vercel.app/" target="_blank" rel="noopener">DC-DC 拓撲系列</a>看 Flyback、ACF、Buck 的電路動畫。<span class="en">Pick a DC-DC topology, then open its animation in the DC-DC series.</span></li>
 <li>「05 供電端與預算」從交換器的角度複習一次握手，並試試不同分配模式；「06 功率協商」看上電後的 LLDP 來回與 TLV 每個 bit。<span class="en">Then switch sides: the PSE page and the LLDP page.</span></li>
 </ol>
+</section>
+<section class="panel" aria-labelledby="h-rel">
+<h2 id="h-rel">相關系列 <span class="en">Related series</span></h2>
+<div class="cards">
+<a class="card" href="https://dcdc-topology-series.vercel.app/" target="_blank" rel="noopener" style="--c:var(--accent)"><span class="no">SERIES · DC-DC</span><h2>DC-DC 拓撲<small>Boost · Buck · 4-SW · SEPIC · Flyback · ACF</small></h2><p>六種拓撲的電流回路動畫與同步波形：開關電流、輸入／輸出電流的關係，以及限流值怎麼對應。</p><ul><li>同步 Buck 是多相 VRM 每一相的基礎</li><li>Flyback、ACF 是 PoE PD 常用的隔離拓撲</li></ul><span class="go">開啟 Open ↗</span></a>
+<div class="card" style="--c:var(--on)"><span class="no">SERIES · PoE PD</span><h2>PoE PD 受電端<small>Power over Ethernet · RJ45 → DC-DC</small></h2><p>從網路線到板上電壓：架構、握手狀態機、功率預算、DC-DC 拓撲選擇、PSE 端與 LLDP 功率協商。</p><ul><li>後段 DC-DC 連到 DC-DC 系列</li><li>IEEE 802.3af／at／bt</li></ul><span class="go">本系列 This series</span></div>
+<a class="card" href="https://multiphase-vrm-series.vercel.app/" target="_blank" rel="noopener" style="--c:var(--teal)"><span class="no">SERIES · MULTI-PHASE VRM</span><h2>多相供電 VRM<small>CPU／GPU core power · 9 stations</small></h2><p>CPU 核心供電：交錯並聯與紋波抵消、DrMOS／SPS、電流均流、Load-line、相數切換、IMVP9／SVID、相數計算、佈局除錯。</p><ul><li>每一相就是同步 Buck</li><li>Intel Alder／Raptor Lake 公開參數</li></ul><span class="go">開啟 Open ↗</span></a>
+</div>
 </section>
 <footer>
 依據：IEEE 802.3-2022 Clause 33（802.3af／at）與 Clause 145（802.3bt）的 PD 要求；TI、ADI PD 控制器與整流橋控制器資料。每頁注意事項都標出出處（IEEE／晶片廠／補充）。頁面為教學模型，實際設計請以規範與晶片規格書為準。
