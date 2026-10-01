@@ -1,0 +1,608 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PSE 端與交換器功率管理</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="assets/series.css">
+<style>
+.grid-2>*{min-width:0}
+.gloss{width:100%;border-collapse:collapse;font-size:13.5px;min-width:560px}
+.gloss td,.gloss th{border-bottom:1px solid var(--line);padding:5px 8px;text-align:left;vertical-align:top}
+.gloss th{font-size:12.5px;color:var(--muted);background:var(--paper-2)}
+.gloss td:first-child{font-family:var(--mono);font-weight:700;white-space:nowrap}
+.gloss td:nth-child(2){font-weight:600}
+details.glossbox summary{cursor:pointer;font-weight:700;font-size:14px;margin-bottom:8px}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px 22px;margin-bottom:12px}
+.opts .ctl{flex-wrap:wrap}
+.ev-strip{display:flex;gap:4px;align-items:flex-end;flex-wrap:wrap;margin:6px 0 10px}
+.ev-strip span{font:600 11px var(--mono);border-radius:5px;padding:3px 6px;border:1.5px solid var(--c);color:var(--c);background:color-mix(in srgb,var(--c) 10%,transparent)}
+.ev-strip span.long{padding-left:22px;padding-right:22px}
+.ports{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.port{border:1.5px solid var(--line);border-left:5px solid var(--c,var(--line));border-radius:10px;padding:6px 8px;background:var(--paper-2);display:flex;flex-direction:column;gap:3px;min-width:0;font-size:12.5px}
+.port .ph{display:flex;justify-content:space-between;align-items:center;gap:6px}
+.port .ph b{font-family:var(--display);font-size:16px;letter-spacing:.05em}
+.port .st{font-weight:700;font-size:11.5px;color:var(--c)}
+.port select{font-size:12px;padding:3px 4px;width:100%}
+.port .rd{font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+.port.s-on{--c:var(--ok)} .port.s-dem{--c:var(--on)} .port.s-off{--c:var(--warn)} .port.s-empty{--c:var(--line)}
+.bud{position:relative;height:30px;border-radius:7px;background:var(--paper-2);border:1px solid var(--line);overflow:hidden;margin:6px 0 4px}
+.bud i{position:absolute;top:0;bottom:0;border-right:1px solid var(--paper);transition:left .25s,width .25s}
+.bud .cap{position:absolute;top:-2px;bottom:-2px;border-left:3px solid var(--warn)}
+.bud-scale{display:flex;justify-content:space-between;font:500 11px var(--mono);color:var(--muted)}
+.res-line{font-size:13.5px;margin:4px 0}
+.res-line b{font-family:var(--mono)}
+.blk{fill:var(--paper-2);stroke:var(--wire);stroke-width:1.6}
+.blk-hl{fill:color-mix(in srgb,var(--accent) 14%,var(--paper));stroke:var(--accent);stroke-width:2}
+.wr{stroke:var(--wire);stroke-width:2;fill:none}
+.bus{stroke:var(--teal);stroke-width:2;fill:none;stroke-dasharray:6 4}
+.zone-ok{fill:var(--ok);opacity:.14}
+.zone-bad{fill:var(--warn);opacity:.10}
+.zone-may{fill:var(--on);opacity:.10}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="series" aria-label="系列 Series"><span class="lab">系列 Series</span><a href="./"><b>HOME</b>系列首頁</a><a href="architecture.html"><b>01 ARCHITECTURE</b>架構總覽</a><a href="handshake.html"><b>02 HANDSHAKE</b>握手狀態機</a><a href="power-budget.html"><b>03 POWER BUDGET</b>功率預算</a><a href="dcdc-topology.html"><b>04 DC-DC</b>拓撲選擇</a><span class="cur" aria-current="page"><b>05 PSE</b>供電端與預算</span><a href="lldp.html"><b>06 LLDP</b>功率協商</a><a href="https://dcdc-topology-series.vercel.app/" target="_blank" rel="noopener"><b>↗ DC-DC</b>拓撲系列</a></nav>
+<header>
+<div>
+<div class="eyebrow">PoE PD Series · 05</div>
+<h1>PSE 端與交換器功率管理<small>PSE side · detection, classification, inrush, current limit, MPS &amp; switch power budget</small></h1>
+</div>
+<div class="chip-dc">24 埠 <span>·</span> 370 W</div>
+<p class="lede">前面幾頁都站在 PD（Powered Device，受電設備）這一端。這一頁換到 PSE（Power Sourcing Equipment，供電設備，通常就是 PoE Switch）那一端：它怎麼用兩點量測<b>偵測</b> PD、依自己剩下的電源<b>決定給幾次分級事件</b>、怎麼控制<b>湧浪</b>與<b>過流</b>、怎麼用 MPS（Maintain Power Signature，維持供電特徵）判斷 PD 還在不在，最後再看一台 24 埠、370 W 的交換器怎麼把有限的電源<b>分配</b>給所有埠。
+<span class="en">The PSE's view: two-point detection, how many class events to grant, inrush and current-limit templates, MPS monitoring, and how a 24-port 370 W switch shares its power budget.</span></p>
+</header>
+<section class="panel" aria-labelledby="h-gloss">
+<h2 id="h-gloss"><span class="step">0</span>縮寫對照 <span class="en">Abbreviations used on this page</span></h2>
+<details class="glossbox" open><summary>展開／收合 Show / hide</summary>
+<div class="scroll-x"><table class="gloss">
+<thead><tr><th>縮寫</th><th>完整英文名稱</th><th>中文意思與說明</th></tr></thead>
+<tbody>
+<tr><td>PoE</td><td>Power over Ethernet</td><td>乙太網路供電</td></tr>
+<tr><td>PSE</td><td>Power Sourcing Equipment</td><td>供電設備，通常是 PoE Switch 或中跨供電器（Midspan injector）</td></tr>
+<tr><td>PD</td><td>Powered Device</td><td>受電設備，例如 AP、IP Cam、話機</td></tr>
+<tr><td>PI</td><td>Power Interface</td><td>電源介面：PSE／PD 在 RJ45 接頭上的供電接點，規範的電壓電流都在這裡量</td></tr>
+<tr><td>MDI</td><td>Medium Dependent Interface</td><td>媒體相關介面：RJ45 接頭與線對本身</td></tr>
+<tr><td>MPS</td><td>Maintain Power Signature</td><td>維持供電特徵：PD 上電後必須持續吸取的最小電流，PSE 靠它判斷 PD 還接著</td></tr>
+<tr><td>PSU</td><td>Power Supply Unit</td><td>交換器的電源供應器，它的額定功率就是 PoE 總預算的上限</td></tr>
+<tr><td>LLDP</td><td>Link Layer Discovery Protocol</td><td>鏈結層探索協定，PD 上電後用它重新協商功率（詳見 06 頁）</td></tr>
+<tr><td>DLL</td><td>Data Link Layer (classification)</td><td>資料鏈結層分級，就是透過 LLDP 協商功率</td></tr>
+<tr><td>ILIM</td><td>Current Limit (I<sub>LIM</sub>)</td><td>限流值：短路或過載時 PSE 把電流壓住的上限</td></tr>
+<tr><td>ICUT／PCUT</td><td>Overload Current / Power Cutoff</td><td>過載切斷門檻（電流或功率），超過並持續 T<sub>CUT</sub> 後斷電</td></tr>
+<tr><td>TCUT／TLIM</td><td>Overload Time Limit / Current-limit Time</td><td>過載可容許時間（50–75 ms）／限流至少要維持的時間（Type 3：10 ms、Type 4：6 ms）</td></tr>
+<tr><td>LPS</td><td>Limited Power Source</td><td>受限電源（IEC 62368-1 安規），Type 4 PSE 因此不得長時間輸出超過 99.9 W</td></tr>
+<tr><td>FET</td><td>Field-Effect Transistor</td><td>場效電晶體，每個 PSE 埠用一顆 MOSFET 當開關與限流元件</td></tr>
+<tr><td>ADC</td><td>Analog-to-Digital Converter</td><td>類比數位轉換器，PSE 晶片用它量每埠電流與電壓</td></tr>
+<tr><td>I²C</td><td>Inter-Integrated Circuit</td><td>主控制器與 PSE 晶片之間的管理匯流排</td></tr>
+<tr><td>Autoclass</td><td>Autoclass</td><td>bt 選用功能：PD 上電後刻意吃滿功率，讓 PSE 實測後只保留實際需要的功率</td></tr>
+</tbody>
+</table></div>
+</details>
+</section>
+<section class="panel" aria-labelledby="h-arch">
+<h2 id="h-arch"><span class="step">1</span>PSE 埠的電路與管理分層 <span class="en">Inside a PSE port</span></h2>
+<div class="scroll-x">
+<svg id="archSvg" viewBox="0 0 1000 330" role="img" aria-label="PSE 方塊圖：主控制器經 I2C 管理 PSE 控制器，每埠一顆 MOSFET 與檢流電阻"></svg>
+</div>
+<div class="stage-cards" style="margin-top:10px">
+<div class="stage" style="--c:var(--teal)"><h3><span class="no">①</span>主控制器軟體 Host</h3><p>交換器的 CPU 管理總預算、埠優先權、分配模式，並處理 LLDP 封包。透過 I²C 讀寫 PSE 晶片的暫存器。</p><p class="en">Owns the budget, priorities, allocation mode and LLDP; talks to the PSE IC over I²C.</p></div>
+<div class="stage" style="--c:var(--accent)"><h3><span class="no">②</span>PSE 控制器 IC</h3><p>例如 TI TPS23881：8 通道，每埠有 14-bit 電流 ADC，負責偵測、分級、湧浪、限流、MPS 監測，並依設定的功率上限（PCUT）與優先權快速關斷。</p><p class="en">Runs detection, classification, inrush, current limit and MPS per port, in hardware.</p></div>
+<div class="stage" style="--c:var(--on)"><h3><span class="no">③</span>埠功率路徑 Port</h3><p>常見做法是把 MOSFET 和檢流電阻放在負端（回路）：晶片看檢流電阻上的電壓得知電流，用 Gate 控制導通與限流，Drain 腳量 PI 電壓做偵測與分級。</p><p class="en">A low-side MOSFET and sense resistor in the return path; the IC senses current and drives the gate.</p></div>
+</div>
+</section>
+<section class="panel" aria-labelledby="h-det">
+<h2 id="h-det"><span class="step">2</span>偵測：兩點量測 <span class="en">Detection: two-point measurement</span></h2>
+<p class="lede" style="margin:0 0 10px">PSE 在 2.8–10 V 之間施加兩個電壓（相差至少 1 V），量兩個電流，用<b>斜率</b> R = ΔV／ΔI 判斷對方是不是 PD。用兩點是為了抵消 PD 整流橋造成的電壓偏移：單點的 V／I 會被偏移帶偏，斜率不會。整段過程電壓不超過 30 V、電流不超過 5 mA，對一般網卡無害。
+<span class="en">Two voltages, two currents, one slope. The slope cancels the bridge offset that a single V/I reading would include.</span></p>
+<div class="grid-2" style="align-items:start">
+<div>
+<div class="params" id="detParams"></div>
+<div class="presets" id="detPresets"><span>範例 Presets：</span></div>
+<div class="badges" id="detBadges" style="margin-top:12px"></div>
+<div class="formulas" id="detF"></div>
+</div>
+<div class="scroll-x"><svg id="detSvg" viewBox="0 0 560 360" role="img" aria-label="偵測 V-I 圖"></svg></div>
+</div>
+<div class="legend"><span><i style="border-color:var(--ok)"></i>PSE 必須接受 19–26.5 kΩ</span><span><i style="border-color:var(--on)"></i>灰色地帶：PSE 可接受也可拒絕</span><span><i style="border-color:var(--warn)"></i>PSE 必須拒絕：&lt; 15 kΩ 或 &gt; 33 kΩ</span></div>
+</section>
+<section class="panel" aria-labelledby="h-cls">
+<h2 id="h-cls"><span class="step">3</span>分級：PSE 決定給幾次事件 <span class="en">Classification from the PSE side</span></h2>
+<p class="lede" style="margin:0 0 10px">PD 用分級電流說出「我要多少」，PSE 再依<b>自己的類型</b>和<b>這個埠此刻還分得到多少功率</b>決定給幾次分級事件。事件次數就是 PSE 的答覆：1 次 → 最高 Class 3、2–3 次 → Class 4、4 次 → Class 6、5 次 → Class 8。PSE 不可以給超過 PD 需要的次數。
+<span class="en">The number of class events is the PSE's answer; it may never give more events than the PD needs.</span></p>
+<div class="opts">
+<div class="ctl"><span class="lab">PSE 類型</span><div class="seg" id="clsType" role="group" aria-label="PSE type"><button type="button" data-v="2">Type 2 · at</button><button type="button" data-v="3">Type 3 · bt</button><button type="button" data-v="4">Type 4 · bt</button></div></div>
+<div class="ctl"><span class="lab">PD 要求 Class</span><div class="seg" id="clsReq" role="group" aria-label="Requested class"><button type="button" data-v="1">1</button><button type="button" data-v="2">2</button><button type="button" data-v="3">3</button><button type="button" data-v="4">4</button><button type="button" data-v="5">5</button><button type="button" data-v="6">6</button><button type="button" data-v="7">7</button><button type="button" data-v="8">8</button></div></div>
+<div class="ctl"><span class="lab">PD 特徵</span><div class="seg" id="clsSig" role="group" aria-label="Signature"><button type="button" data-v="ss">單一特徵 single</button><button type="button" data-v="ds">雙特徵 dual</button></div></div>
+</div>
+<div class="params" id="clsParams"></div>
+<div class="grid-2" style="align-items:start;margin-top:12px">
+<div>
+<div class="badges" id="clsBadges"></div>
+<div class="ev-strip" id="clsStrip"></div>
+<div class="kv" id="clsKv"></div>
+</div>
+<div class="infobox" id="clsInfo" style="--c:var(--teal)"></div>
+</div>
+</section>
+<section class="panel" aria-labelledby="h-inr">
+<h2 id="h-inr"><span class="step">4</span>湧浪：PD 大電容要在 50 ms 內充飽 <span class="en">Inrush: charge the bulk capacitor in time</span></h2>
+<p class="lede" style="margin:0 0 10px">PSE 上電後先進入湧浪階段，把總電流限制在 I<sub>Inrush</sub>，維持 50–75 ms 之後才切到正常供電並開始執行 Class 功率與過流規則。所以 PD 的大電容必須在<b>最壞的 50 ms</b> 內充飽；DC-DC 太早啟動會吃掉充電電流（02 頁的「太早啟動」情境）。
+<span class="en">The PSE limits current for 50–75 ms; the PD's bulk capacitor must be charged within the worst-case 50 ms.</span></p>
+<div class="opts">
+<div class="ctl"><span class="lab">核准 Class</span><div class="seg" id="inrCls" role="group" aria-label="Assigned class"><button type="button" data-v="a">1–4</button><button type="button" data-v="b">5–6</button><button type="button" data-v="c">7–8</button></div></div>
+<div class="ctl"><span class="lab">湧浪線對</span><div class="seg" id="inrPairs" role="group" aria-label="Inrush pairs"><button type="button" data-v="2">2 對</button><button type="button" data-v="4">4 對</button></div></div>
+</div>
+<div class="params" id="inrParams"></div>
+<div class="badges" id="inrBadges" style="margin-top:12px"></div>
+<div class="scroll-x"><svg id="inrSvg" viewBox="0 0 1000 300" role="img" aria-label="湧浪階段的電容電壓與電流"></svg></div>
+<div class="legend"><span><i style="border-color:var(--accent)"></i>PD 大電容電壓 V<sub>bulk</sub></span><span><i style="border-color:var(--on)"></i>PSE 輸出電流</span><span>假設 PSE 輸出 54 V，以 PSE 保證的最低湧浪電流計算（最壞情況）</span></div>
+</section>
+<section class="panel" aria-labelledby="h-lim">
+<h2 id="h-lim"><span class="step">5</span>過流與限流範本 <span class="en">Operating current template (per pairset)</span></h2>
+<p class="lede" style="margin:0 0 10px">bt 用「上界」與「下界」兩條範本規定每組線對的電流：電流在<b>下界以下</b>，PSE 一定要供電；超過<b>上界</b>，PSE 一定要在時限內斷電；兩條線之間由晶片自行決定（通常就是 PCUT／ICUT 設定）。選一個故障情境，看 PSE 的反應。
+<span class="en">Below the lower bound the PSE must keep power; above the upper bound it must cut; in between it is implementation-defined.</span></p>
+<div class="opts">
+<div class="ctl"><span class="lab">核准 Class</span><div class="seg" id="limCls" role="group" aria-label="Assigned class"><button type="button" data-v="4">4</button><button type="button" data-v="5">5</button><button type="button" data-v="6">6</button><button type="button" data-v="7">7</button><button type="button" data-v="8">8</button></div></div>
+<div class="ctl"><span class="lab">情境</span><div class="seg" id="limScn" role="group" aria-label="Scenario" style="flex-wrap:wrap"><button type="button" data-v="ok">正常</button><button type="button" data-v="peak">短暫尖峰</button><button type="button" data-v="long">尖峰過久</button><button type="button" data-v="over">持續過載</button><button type="button" data-v="short">短路</button></div></div>
+</div>
+<div class="badges" id="limBadges"></div>
+<div class="scroll-x"><svg id="limSvg" viewBox="0 0 1000 362" role="img" aria-label="PSE 每組線對電流範本與故障波形"></svg></div>
+<div class="legend"><span><i style="border-color:var(--warn)"></i>上界：超過必須斷電</span><span><i style="border-color:var(--ok)"></i>下界：以下必須供電</span><span><i style="border-color:var(--accent)"></i>這個情境的每組線對電流</span><span>時間軸為對數刻度；下界數值以兩組線對平均分流估算</span></div>
+</section>
+<section class="panel" aria-labelledby="h-mps">
+<h2 id="h-mps"><span class="step">6</span>MPS：PSE 怎麼判斷 PD 還在 <span class="en">MPS monitoring at the PSE</span></h2>
+<p class="lede" style="margin:0 0 10px">PSE 持續量測埠電流：電流高於 I<sub>Hold</sub> 上限並持續至少 T<sub>MPS</sub>，算一次「有效的 MPS」；最後一次有效 MPS 之後如果超過 T<sub>MPDO</sub>（300–400 ms）都沒有新的，PSE 就斷電。待機省電的 PD 會用<b>脈衝</b>方式吸電流來過關。
+<span class="en">Current above IHold for at least TMPS counts as valid MPS; no valid MPS for TMPDO (300–400 ms) and the PSE removes power.</span></p>
+<div class="opts">
+<div class="ctl"><span class="lab">PSE 類型</span><div class="seg" id="mpsType" role="group" aria-label="PSE type"><button type="button" data-v="12">Type 1／2</button><button type="button" data-v="34">Type 3／4</button></div></div>
+<div class="ctl"><span class="lab">核准 Class</span><div class="seg" id="mpsCls" role="group" aria-label="Assigned class"><button type="button" data-v="lo">1–4</button><button type="button" data-v="hi">5–8</button></div></div>
+</div>
+<div class="params" id="mpsParams"></div>
+<div class="presets" id="mpsPresets"><span>範例 Presets：</span></div>
+<div class="badges" id="mpsBadges" style="margin-top:12px"></div>
+<div class="scroll-x"><svg id="mpsSvg" viewBox="0 0 1000 300" role="img" aria-label="MPS 脈衝電流與 PSE 判斷"></svg></div>
+<div class="legend"><span><i style="border-color:var(--accent)"></i>PD 電流</span><span><i style="border-color:var(--ok)"></i>有效 MPS 脈衝</span><span><i style="border-color:var(--off)"></i>距離上次有效 MPS 的時間</span><span>以「最嚴格的 PSE」判斷：電流必須高於 I<sub>Hold</sub> 上限才算數，超過 300 ms 就斷電</span></div>
+</section>
+<section class="panel" aria-labelledby="h-sw">
+<h2 id="h-sw"><span class="step">7</span>交換器功率預算模擬器 <span class="en">Switch power budget simulator · 24 ports · 370 W</span></h2>
+<p class="lede" style="margin:0 0 10px">規範只規定單一埠，<b>總預算怎麼分</b>是交換器廠商自己的實作。每個埠選一台設備、設定優先權，再切換分配模式，看預算條怎麼變、誰被降級、誰被斷電。預算不夠時，從<b>優先權最低、埠號最大</b>的埠開始卸載（各家規則略有不同，這是最常見的做法）。
+<span class="en">The standard defines one port; sharing the PSU is up to the switch. Pick devices and priorities, switch allocation modes, and watch who gets demoted or shed.</span></p>
+<div class="opts">
+<div class="ctl"><span class="lab">分配模式</span><div class="seg" id="swMode" role="group" aria-label="Allocation mode" style="flex-wrap:wrap"><button type="button" data-v="class">依 Class</button><button type="button" data-v="lldp">依 LLDP</button><button type="button" data-v="usage">依實際用量</button><button type="button" data-v="auto">Autoclass</button></div></div>
+<div class="ctl"><span class="lab">負載狀態</span><div class="seg" id="swLoad" role="group" aria-label="Load"><button type="button" data-v="typ">一般</button><button type="button" data-v="peak">全部尖峰</button></div></div>
+<div class="ctl"><span class="lab">預算不足時</span><div class="seg" id="swDem" role="group" aria-label="Demotion"><button type="button" data-v="1">允許降級</button><button type="button" data-v="0">直接不供電</button></div></div>
+</div>
+<div class="params" id="swParams"></div>
+<div class="presets" id="swPresets"><span>範例 Presets：</span></div>
+<div style="margin-top:12px">
+<div class="badges" id="swBadges"></div>
+<div class="bud" id="swBud" aria-hidden="true"></div>
+<div class="bud-scale" id="swScale"></div>
+<div id="swRes"></div>
+</div>
+<div class="ports" id="swPorts" style="margin-top:12px"></div>
+<div class="infobox" id="swInfo" style="--c:var(--accent);margin-top:12px;min-height:0"></div>
+</section>
+<section class="panel" aria-labelledby="h-notes">
+<h2 id="h-notes"><span class="step">8</span>實務注意事項 <span class="en">Practical notes</span></h2>
+<div class="note-key"><span><span class="src ieee">IEEE</span> IEEE 802.3 規範數值</span><span><span class="src ti">TI</span> 晶片廠資料</span><span><span class="src add">補充</span> 一般設計經驗與交換器廠商做法</span></div>
+<div class="ngroups">
+<div class="ngroup" style="--c:var(--accent)">
+<h3>埠電路 <span class="en">Port circuit</span></h3>
+<ul>
+<li><b>MOSFET 要扛限流時的功耗</b><span class="src ti">TI</span><br>限流時 MOSFET 兩端壓降大、電流也大，短短幾十 ms 的功耗可達數十瓦。選 MOSFET 要看 SOA（Safe Operating Area，安全工作區）曲線，不能只看 R<sub>DS(on)</sub>。<span class="en">Check the MOSFET's safe operating area for current-limit events, not just RDS(on).</span></li>
+<li><b>埠的突波保護</b><span class="src add">補充</span><br>線材可能很長、可能接到戶外，每埠通常在 PI 端加 TVS 二極體與電容，吸收 ESD 和電纜放電，否則 PSE 晶片的 Drain 腳容易被打壞。<span class="en">Add TVS protection per port against ESD and cable discharge.</span></li>
+<li><b>檢流電阻的精度</b><span class="src ti">TI</span><br>電流量測精度直接影響功率分配與 MPS 判斷。TPS23881 宣稱 2% 電流量測精度、±2.5% 功率限制精度，搭配的檢流電阻要用低溫漂的精密電阻。<span class="en">Sense-resistor tolerance feeds straight into power and MPS accuracy.</span></li>
+</ul>
+</div>
+<div class="ngroup" style="--c:var(--ok)">
+<h3>規範重點 <span class="en">Standard essentials</span></h3>
+<ul>
+<li><b>每組線對都要各自偵測</b><span class="src ieee">IEEE</span><br>bt 規定：沒有通過偵測的線對，在任何情況下都不能上電。要用 4 對供電，兩組線對都要有合格的偵測特徵。<span class="en">Never power a pairset without a valid detection signature on it.</span></li>
+<li><b>Class 7／8 一定要用 4 對湧浪</b><span class="src ieee">IEEE</span><br>Class 7–8 的總湧浪電流至少 800 mA，但每組線對上限 600 mA，只有兩組一起送才同時滿足。<span class="en">Class 7–8 inrush needs ≥ 800 mA total with ≤ 600 mA per pairset — 4-pair only.</span></li>
+<li><b>MPS 時間 bt 變短</b><span class="src ieee">IEEE</span><br>Type 3／4 PSE 的 T<sub>MPS</sub> 從 60 ms 縮到 6 ms，PD 脈衝只需 7 ms，待機功耗可以壓得很低；但 PD 脈衝與 PSE 判斷之間只剩 1 ms 餘量，PD 端要注意大電容會先供應脈衝電流。<span class="en">Short MPS: 7 ms PD pulses vs 6 ms PSE validation leaves only 1 ms of margin.</span></li>
+</ul>
+</div>
+<div class="ngroup" style="--c:var(--on)">
+<h3>交換器預算 <span class="en">Switch budget</span></h3>
+<ul>
+<li><b>電源供應器要留餘量</b><span class="src add">補充</span><br>PSU 的額定輸出還要扣掉交換器本身、風扇與轉換效率；多數廠商的「PoE 預算」已經是扣過的值。另外常設一個保留量（guard band），避免新接上的 PD 讓總功率瞬間超標。<span class="en">Keep a guard band so a new PD cannot momentarily overload the PSU.</span></li>
+<li><b>依用量分配要小心尖峰</b><span class="src add">補充</span><br>動態模式只扣「現在的用量」，接的設備最多，但多台設備同時進入尖峰（例如攝影機夜間 IR 全開、PTZ 加熱器啟動）就可能超過 PSU，交換器只能臨時斷掉低優先權的埠。<span class="en">Usage-based allocation packs the most devices but can drop ports when peaks coincide.</span></li>
+<li><b>關鍵設備設高優先權</b><span class="src add">補充</span><br>門禁、監視、無線基地台這類關鍵設備設成 Critical；同優先權時多數交換器保留埠號小的。佈線時把重要設備接在前面的埠，是常見的實務習慣。<span class="en">Set critical devices to Critical; lower port numbers usually win ties.</span></li>
+</ul>
+</div>
+</div>
+</section>
+<footer>
+數值依據：PSE 偵測、湧浪、限流範本、MPS 依 IEEE 802.3 Clause 33（Type 1／2）與 Clause 145（Type 3／4），並對照 <a href="https://ethernetalliance.org/wp-content/uploads/2019/12/WP_EA_Overview8023bt_V2p1_FINAL.pdf" target="_blank" rel="noopener">Ethernet Alliance 802.3bt 白皮書 v2.1</a>（偵測 3 章、分級 Table 5／7、湧浪 Figure 19、限流範本 Figure 22／23、MPS Table 19／20、P<sub>Class</sub>／P<sub>Peak</sub> Table 14）；PSE 偵測接受／拒絕範圍（19–26.5 kΩ／&lt; 15 kΩ、&gt; 33 kΩ、&gt; 10 µF）依 Clause 33.2.5；Type 1／2 PSE 的 I<sub>Hold</sub> 5–10 mA、T<sub>MPS</sub> 60 ms、T<sub>MPDO</sub> 300–400 ms 依 Clause 33。PSE 晶片架構參考 <a href="https://ti.com/lit/pdf/SLVSF02" target="_blank" rel="noopener">TI TPS23881 規格書</a>。交換器分配模式（依 Class／LLDP／用量／混合）整理自 Cisco、Aruba、Extreme、Westermo 等廠商文件，屬一般做法，各家細節不同。模型簡化：限流範本的下界以兩組線對平均分流估算，未計入線對間不平衡；湧浪以定電流充電估算；預算模擬器的 PSE 端功率以最壞線材（2 對 12.5 Ω、4 對 6.25 Ω）把 PD 功率換算回 PSE 端。實際設計請以規範與晶片規格書為準。
+<br>Teaching models based on IEEE 802.3 Clauses 33 and 145, the Ethernet Alliance 802.3bt overview and TI TPS23881. Switch allocation behaviour varies by vendor.
+</footer>
+</div>
+<script src="assets/common.js"></script>
+<script>
+(function(){
+const LN10 = Math.log(10);
+// worst-case PSE-side power needed to deliver pdW at the PD (EA eq. 5); bt PSE: V 50 V (52 V for class 7-8), R 12.5 / 6.25 ohm
+function pseW(pdW, cls, V, R){
+V = V || (cls >= 7 ? 52 : 50); R = R || (cls >= 5 ? 6.25 : 12.5);
+const d = V*V - 4*R*pdW; if (d < 0) return Infinity;
+return V*(V - Math.sqrt(d))/(2*R);
+}
+const PCLASS = [14.0, 4.0, 6.7, 14.0, 30, 45, 60, 75, 90];      // EA Table 14 (class 0 handled as class 3)
+const PPEAK  = [16.07, 5.47, 8.87, 16.07, 34.12, 47.68, 63.62, 79.83, 96.36];
+const PDCLS  = [13.0, 3.84, 6.49, 13.0, 25.5, 40, 51, 62, 71.3];
+function axis(g, x0, y0, x1, y1){ svgEl('line', {x1:x0, y1:y1, x2:x1, y2:y1, class:'axis'}, g); svgEl('line', {x1:x0, y1:y0, x2:x0, y2:y1, class:'axis'}, g); }
+function clear(svg){ while (svg.firstChild) svg.removeChild(svg.firstChild); return svg; }
+const badges = (id, list) => { $(id).innerHTML = list.map(([k, t]) => `<span class="badge ${k}">${t}</span>`).join(''); };
+/* ---------- 1. architecture diagram ---------- */
+(function(){
+const s = $('archSvg');
+const box = (x, y, w, h, t, sub, cls) => { svgEl('rect', {x, y, width:w, height:h, rx:10, class:cls || 'blk'}, s); svgEl('text', {x:x + w/2, y:y + h/2 - (sub ? 4 : -5), 'text-anchor':'middle', class:'lbl'}, s, t); if (sub) svgEl('text', {x:x + w/2, y:y + h/2 + 14, 'text-anchor':'middle', class:'lbl-sm'}, s, sub); };
+box(20, 30, 170, 70, '主控制器 Host CPU', '預算・優先權・LLDP');
+box(20, 220, 170, 70, 'PSU 電源供應器', '54 V · PoE 預算 370 W');
+box(300, 110, 210, 110, 'PSE 控制器 IC', '例：TI TPS23881（8 埠）', 'blk-hl');
+svgEl('path', {d:'M105,100 V140 H300', class:'bus'}, s);
+svgEl('text', {x:200, y:132, class:'lbl-sm'}, s, 'I²C 管理匯流排');
+// port power path
+svgEl('path', {d:'M190,235 H240 V14 H820 V60 H880', class:'wr'}, s);
+svgEl('text', {x:600, y:30, class:'lbl-sm'}, s, '+54 V（正端直接到埠）');
+svgEl('rect', {x:880, y:40, width:100, height:250, rx:12, class:'blk'}, s);
+svgEl('text', {x:930, y:160, 'text-anchor':'middle', class:'lbl'}, s, 'RJ45');
+svgEl('text', {x:930, y:180, 'text-anchor':'middle', class:'lbl-sm'}, s, 'PI 埠');
+svgEl('path', {d:'M880,240 H800', class:'wr'}, s);
+svgEl('text', {x:812, y:232, class:'lbl-sm'}, s, '回路 Return');
+// MOSFET + sense
+svgEl('rect', {x:690, y:220, width:110, height:44, rx:8, class:'blk'}, s);
+svgEl('text', {x:745, y:247, 'text-anchor':'middle', class:'lbl'}, s, 'MOSFET');
+svgEl('path', {d:'M690,242 H640', class:'wr'}, s);
+svgEl('rect', {x:560, y:226, width:80, height:32, rx:6, class:'blk'}, s);
+svgEl('text', {x:600, y:247, 'text-anchor':'middle', class:'lbl-sm'}, s, 'R_sense');
+svgEl('path', {d:'M560,242 H520 V275 H190', class:'wr'}, s);
+svgEl('text', {x:260, y:268, class:'lbl-sm'}, s, '0 V（54 V 回路）');
+// control lines
+svgEl('path', {d:'M510,150 H745 V220', class:'bus'}, s); svgEl('text', {x:600, y:144, class:'lbl-sm'}, s, 'GATE 閘極驅動');
+svgEl('path', {d:'M510,180 H600 V226', class:'bus'}, s); svgEl('text', {x:520, y:198, class:'lbl-sm'}, s, 'SEN 量電流');
+svgEl('path', {d:'M510,205 H535 V305 H840 V242', class:'bus'}, s); svgEl('text', {x:560, y:322, class:'lbl-sm'}, s, 'DRAIN 量 PI 電壓（偵測／分級）');
+})();
+/* ---------- 2. detection ---------- */
+const D = {r:25, vos:1.4, c:0.1};
+const detDefs = [
+{k:'r', zh:'PD 偵測電阻', en:'Rdet', min:5, max:45, step:0.5, fmt:v => v.toFixed(1) + ' kΩ'},
+{k:'vos', zh:'整流橋電壓偏移', en:'Voffset', min:0, max:3, step:0.1, fmt:v => v.toFixed(1) + ' V'},
+{k:'c', zh:'PD 輸入電容', en:'Cdet', min:0.05, max:15, step:0.05, fmt:v => v < 1 ? (v*1000).toFixed(0) + ' nF' : v.toFixed(1) + ' µF'}
+];
+const detSync = sliders(detDefs, D, $('detParams'), detUpdate);
+[['合格 PD', {r:25, vos:1.4, c:0.1}], ['電阻太低（12 kΩ）', {r:12, vos:1.4, c:0.1}], ['灰色地帶（30 kΩ）', {r:30, vos:1.4, c:0.1}], ['偏移過大（2.6 V）', {r:25, vos:2.6, c:0.1}], ['大電容（22 µF）', {r:25, vos:1.4, c:15}]].forEach(([l, v]) => {
+const b = document.createElement('button'); b.type = 'button'; b.textContent = l;
+b.addEventListener('click', () => { Object.assign(D, v); detSync(); detUpdate(); }); $('detPresets').appendChild(b);
+});
+function detUpdate(){
+const s = clear($('detSvg')), V1 = 4, V2 = 8;
+const I = v => Math.max(0, (v - D.vos)/D.r);           // mA (V / kOhm)
+const i1 = I(V1), i2 = I(V2), slope = (V2 - V1)/((i2 - i1) || 1e-9), single = V2/(i2 || 1e-9);
+const X = v => 60 + v/10*470, Y = i => 320 - i/0.6*290;
+axis(s, 60, 20, 540, 320);
+for (let v = 0; v <= 10; v += 2) svgEl('text', {x:X(v), y:338, 'text-anchor':'middle', class:'tick'}, s, v + ' V');
+for (let i = 0; i <= 0.6; i += 0.1) svgEl('text', {x:52, y:Y(i) + 4, 'text-anchor':'end', class:'tick'}, s, (i*1000).toFixed(0));
+svgEl('text', {x:14, y:14, class:'tick'}, s, 'I (µA)');
+svgEl('rect', {x:X(2.8), y:20, width:X(10) - X(2.8), height:300, fill:'var(--accent)', opacity:.05}, s);
+svgEl('text', {x:X(2.8) + 4, y:34, class:'lbl-sm'}, s, '量測範圍 2.8–10 V');
+// zones drawn around the measured offset
+const vo = D.vos, wedge = (r1, r2, cls) => { const pts = [[vo, 0], [10, (10 - vo)/r1], [10, (10 - vo)/r2]]; svgEl('polygon', {points:pts.map(([v, i]) => X(v) + ',' + Y(Math.min(i, 0.6))).join(' '), class:cls}, s); };
+wedge(15, 19, 'zone-may'); wedge(26.5, 33, 'zone-may'); wedge(19, 26.5, 'zone-ok'); wedge(5, 15, 'zone-bad'); wedge(33, 200, 'zone-bad');
+[[19, 'var(--ok)'], [26.5, 'var(--ok)'], [15, 'var(--warn)'], [33, 'var(--warn)']].forEach(([r, c]) => {
+svgEl('line', {x1:X(vo), y1:Y(0), x2:X(10), y2:Y(Math.min((10 - vo)/r, 0.6)), stroke:c, class:'ref'}, s);
+const ie = (10 - vo)/r; if (ie < 0.6) svgEl('text', {x:X(10) - 2, y:Y(ie) - 4, 'text-anchor':'end', class:'ref-lbl', fill:c}, s, r + ' kΩ');
+});
+// PD curve
+const pts = []; for (let v = 0; v <= 10; v += 0.1) pts.push(X(v) + ',' + Y(Math.min(I(v), 0.6)));
+svgEl('polyline', {points:pts.join(' '), fill:'none', stroke:'var(--accent)', 'stroke-width':3}, s);
+[[V1, i1, '①'], [V2, i2, '②']].forEach(([v, i, t]) => { svgEl('circle', {cx:X(v), cy:Y(Math.min(i, 0.6)), r:6, fill:'var(--on)'}, s); svgEl('text', {x:X(v) - 10, y:Y(Math.min(i, 0.6)) - 10, class:'lbl'}, s, t); });
+const verdictR = slope >= 19 && slope <= 26.5 ? 'ok' : (slope < 15 || slope > 33) ? 'bad' : 'may';
+const verdictC = D.c <= 0.15 ? 'ok' : D.c > 10 ? 'bad' : 'may';
+const b = [];
+b.push(verdictR === 'ok' ? ['ok', `斜率 ${fx(slope, 1)} kΩ：必須接受`] : verdictR === 'bad' ? ['warn', `斜率 ${fx(slope, 1)} kΩ：必須拒絕`] : ['info', `斜率 ${fx(slope, 1)} kΩ：灰色地帶，依 PSE 而定`]);
+b.push(verdictC === 'ok' ? ['ok', 'PD 電容在 50–120 nF 規格附近'] : verdictC === 'bad' ? ['warn', '電容 > 10 µF：必須拒絕（像一般設備的大電容）'] : ['info', '電容偏大：PSE 可能量不準而拒絕']);
+b.push(D.vos <= 1.9 ? ['ok', `偏移 ${fx(D.vos, 1)} V ≤ PD 上限 1.9 V`] : D.vos <= 2 ? ['info', `偏移 ${fx(D.vos, 1)} V：PSE 仍須容許（≤ 2 V）`] : ['warn', `偏移 ${fx(D.vos, 1)} V 超過 PSE 容許的 2 V，結果不保證`]);
+const ok = verdictR === 'ok' && verdictC !== 'bad' && D.vos <= 2;
+b.push(ok && verdictC === 'ok' ? ['ok', '結果：進入分級'] : ok ? ['info', '結果：可能進入分級'] : ['warn', '結果：不供電，稍後重新偵測']);
+badges('detBadges', b);
+$('detF').innerHTML = `<div class="f-row"><div class="name">兩點斜率<span class="en">Two-point slope</span></div><div class="eq">R = <b>(V₂ − V₁)／(I₂ − I₁)</b> = (8 − 4) V ／ (${fx(i2*1000, 0)} − ${fx(i1*1000, 0)}) µA</div><div class="res">${fx(slope, 1)} kΩ</div></div>
+<div class="f-row"><div class="name">如果只量一點<span class="en">Single-point (wrong)</span></div><div class="eq">R = V₂／I₂ = 8 V ／ ${fx(i2*1000, 0)} µA（被偏移帶偏）</div><div class="res">${isFinite(single) && single < 1e5 ? fx(single, 1) + ' kΩ' : '—'}</div></div>`;
+}
+detUpdate();
+/* ---------- 3. classification from the PSE side ---------- */
+const CL = {type:4, req:8, sig:'ss', budget:90};
+const evToCls = n => n >= 5 ? 8 : n >= 4 ? 6 : n >= 2 ? 4 : 3;
+sliders([{k:'budget', zh:'這個埠此刻分得到的功率（PSE 端）', en:'Available for this port', min:0, max:90, step:1, fmt:v => v.toFixed(0) + ' W'}], CL, $('clsParams'), clsUpdate);
+segGroup('clsType', v => { CL.type = +v; clsUpdate(); });
+segGroup('clsReq', v => { CL.req = +v; clsUpdate(); });
+segGroup('clsSig', v => { CL.sig = v; clsUpdate(); });
+function clsUpdate(){
+setSeg('clsType', CL.type); setSeg('clsReq', CL.req); setSeg('clsSig', CL.sig);
+const c = CL.req, maxEv = POE.types[CL.type].maxEv, need = POE.needEv(c);
+const cands = [1, 2, 3, 4, 5].filter(n => n <= maxEv && n <= need && !(n === 3));
+let pick = null;
+for (const n of cands) { const a = Math.min(c, evToCls(n)); if (PCLASS[a] <= CL.budget + 1e-9) pick = {n, a}; }
+const b = []; let strip = '';
+if (!pick) {
+b.push(['warn', `連 1 次事件（Class ${Math.min(c, 3)}，${PCLASS[Math.min(c, 3)]} W）都分不到：不供電`]);
+} else {
+const full = pick.a === c;
+b.push(full ? ['ok', `給 ${pick.n} 次事件 → 核准 Class ${pick.a}（全額）`] : ['warn', `給 ${pick.n} 次事件 → 核准 Class ${pick.a}（降級 demoted，PD 要 Class ${c}）`]);
+b.push(['info', `PSE 保留 ${PCLASS[pick.a]} W，PD 最多可用 ${PDCLS[pick.a]} W`]);
+for (let k = 1; k <= pick.n; k++) {
+const long = k === 1 && CL.type >= 3;
+strip += `<span class="${long ? 'long' : ''}" style="--c:var(--teal)">事件 ${k}${long ? '（長 88–105 ms）' : ''} · sig ${POE.sig(c, k)}</span>`;
+if (k < pick.n || CL.type >= 3) strip += '<span style="--c:var(--muted)">Mark</span>';
+}
+strip += '<span style="--c:var(--on)">上電 → 湧浪</span>';
+}
+if (c > 4 && CL.type < 3) b.push(['info', 'at PSE 最多 2 次事件：Class 5–8 的 PD 只會被當成 Class 4']);
+if (c >= 7 && CL.type === 3) b.push(['info', 'Type 3 PSE 最高 Class 6：Class 7／8 的 PD 最多核准到 Class 6']);
+badges('clsBadges', b);
+$('clsStrip').innerHTML = strip;
+const pairs = !pick ? '—' : pick.a >= 5 ? '4 對（必須）' : CL.type >= 3 ? '2 對或 4 對' : '2 對';
+const inr = !pick ? '—' : pick.a >= 7 ? '必須 4 對湧浪' : '2 對或 4 對皆可';
+$('clsKv').innerHTML = [['PSE 最多事件', maxEv + ' 次'], ['PD 需要事件', need + ' 次'], ['實際給', pick ? pick.n + ' 次' : '—'], ['供電線對', pairs], ['湧浪方式', inr], ['PSE 保留', pick ? PCLASS[pick.a] + ' W' : '0 W']]
+.map(([k, v]) => `<div>${k}<b>${v}</b></div>`).join('');
+const ds = CL.sig === 'ds';
+$('clsInfo').innerHTML = `<h3><span class="tag">連線檢查</span>${ds ? '雙特徵 PD dual-signature' : '單一特徵 PD single-signature'}</h3>` +
+(ds ? '<p>bt PSE 偵測後先做<b>連線檢查</b>（connection check），發現兩組線對各有一個獨立的偵測特徵：兩組要<b>各自</b>偵測、各自分級（每組 Class 1–5），也各自湧浪、各自監測 MPS。適合兩組電源要隔離的 PD。</p><p class="en">Each pairset is detected, classified, powered and monitored on its own (Class 1–5 per pairset).</p>'
+: '<p>兩組線對在 PD 內接在一起，共用一個偵測與分級特徵（最常見）。PSE 對兩組做一次分級，用上面的事件次數決定核准等級；Class 5 以上一定用 4 對供電。</p><p class="en">One shared signature; Class 5 and above must use both pairsets.</p>') +
+'<p style="margin-top:8px">bt PSE 的第一次分級事件特別長（88–105 ms），PD 靠這點知道對方是 bt PSE；at PSE 的第一次事件只有 6–30 ms。這也是 02 頁「單一特徵 PD 從第 3 次事件改變 signature」能成立的原因。</p>';
+}
+clsUpdate();
+/* ---------- 4. inrush ---------- */
+const IR = {cls:'a', pairs:2, cap:150, lim:300, load:0};
+const INR = {a:{min:400, max:450, pp:450, zh:'Class 1–4'}, b:{min:400, max:450, pp:600, zh:'Class 5–6'}, c:{min:800, max:900, pp:600, zh:'Class 7–8'}};
+const inrSync = sliders([
+{k:'cap', zh:'PD 大電容', en:'Cbulk', min:10, max:1500, step:10, fmt:v => v.toFixed(0) + ' µF'},
+{k:'lim', zh:'PD 自己的湧浪限流', en:'PD inrush limit', min:50, max:1000, step:10, fmt:v => v.toFixed(0) + ' mA'},
+{k:'load', zh:'湧浪期間 DC-DC 已經吃掉的電流', en:'Load during inrush', min:0, max:600, step:10, fmt:v => v.toFixed(0) + ' mA'}
+], IR, $('inrParams'), inrUpdate);
+segGroup('inrCls', v => { IR.cls = v; if (v === 'c') IR.pairs = 4; inrUpdate(); });
+segGroup('inrPairs', v => { IR.pairs = +v; inrUpdate(); });
+function inrUpdate(){
+setSeg('inrCls', IR.cls); setSeg('inrPairs', IR.pairs); inrSync();
+const W = INR[IR.cls], V = 54, b = [];
+const pseMaxTot = Math.min(W.max, W.pp*(IR.pairs === 4 ? 2 : 1));
+const pairOk = pseMaxTot >= W.min;
+const pseGuar = Math.min(W.min, pseMaxTot);
+const draw = Math.min(IR.lim, pseGuar);
+const ich = draw - IR.load;
+const t = ich > 0 ? IR.cap*1e-6*V/(ich/1000)*1000 : Infinity;   // ms
+if (!pairOk) b.push(['warn', `${W.zh} 至少要 ${W.min} mA，但 2 對每組上限 ${W.pp} mA：必須改用 4 對湧浪`]);
+else b.push(['ok', `PSE 湧浪電流 ${W.min}–${W.max} mA（每組線對 ≤ ${W.pp} mA）`]);
+if (IR.lim > W.max) b.push(['warn', `PD 限流 ${IR.lim} mA 高於 PSE 上限 ${W.max} mA：會撞上 PSE 限流，PD 不符規範`]);
+if (IR.load > 0) b.push(['warn', `DC-DC 太早啟動，吃掉 ${IR.load} mA 充電電流`]);
+b.push(t <= 50 ? ['ok', `充飽約 ${fx(t, 1)} ms ≤ 50 ms：最壞情況也來得及`] : t <= 75 ? ['info', `充飽約 ${fx(t, 1)} ms：介於 50–75 ms，遇到 50 ms 就結束湧浪的 PSE 會失敗`] : ['warn', isFinite(t) ? `充飽要 ${fx(t, 0)} ms > 75 ms：湧浪失敗` : '充電電流 ≤ 0：電容永遠充不起來']);
+badges('inrBadges', b);
+const s = clear($('inrSvg')), Tm = 120, X = ms => 60 + ms/Tm*870, Yv = v => 250 - v/60*220, Yi = ma => 250 - ma/1000*220;
+axis(s, 60, 20, 930, 250);
+for (let ms = 0; ms <= Tm; ms += 20) svgEl('text', {x:X(ms), y:268, 'text-anchor':'middle', class:'tick'}, s, ms + ' ms');
+for (let v = 0; v <= 60; v += 20) svgEl('text', {x:52, y:Yv(v) + 4, 'text-anchor':'end', class:'tick', fill:'var(--accent)'}, s, v + ' V');
+for (let ma = 0; ma <= 1000; ma += 250) svgEl('text', {x:936, y:Yi(ma) + 4, class:'tick'}, s, ma + ' mA');
+svgEl('rect', {x:X(50), y:20, width:X(75) - X(50), height:230, fill:'var(--on)', opacity:.08}, s);
+[[50, 'PSE 最早結束湧浪 50 ms'], [75, '最晚 75 ms'], [80, 'PD 湧浪期結束 80 ms']].forEach(([ms, l], k) => {
+svgEl('line', {x1:X(ms), y1:20, x2:X(ms), y2:250, stroke:k === 0 ? 'var(--warn)' : 'var(--muted)', class:'ref'}, s);
+svgEl('text', {x:X(ms) + 4, y:34 + k*14, class:'ref-lbl', fill:k === 0 ? 'var(--warn)' : 'var(--muted)'}, s, l);
+});
+const tEnd = Math.min(isFinite(t) ? t : Tm, Tm);
+svgEl('polyline', {points:[X(0) + ',' + Yv(0), X(tEnd) + ',' + Yv(isFinite(t) ? Math.min(V, V*tEnd/t) : 0), X(Tm) + ',' + Yv(isFinite(t) && t <= Tm ? V : (isFinite(t) ? V*Tm/t : 0))].join(' '), fill:'none', stroke:'var(--accent)', 'stroke-width':3}, s);
+const iTot = draw;
+svgEl('polyline', {points:[X(0) + ',' + Yi(iTot), X(tEnd) + ',' + Yi(iTot), X(tEnd) + ',' + Yi(IR.load || 20), X(Tm) + ',' + Yi(IR.load || 20)].join(' '), fill:'none', stroke:'var(--on)', 'stroke-width':2.5, 'stroke-dasharray':'7 4'}, s);
+svgEl('text', {x:X(2), y:Yi(iTot) - 6, class:'ref-lbl', fill:'var(--on)'}, s, fx(iTot, 0) + ' mA');
+}
+inrUpdate();
+/* ---------- 5. current-limit templates ---------- */
+const LM = {cls:6, scn:'peak'};
+segGroup('limCls', v => { LM.cls = +v; limUpdate(); });
+segGroup('limScn', v => { LM.scn = v; limUpdate(); });
+function limUpdate(){
+setSeg('limCls', LM.cls); setSeg('limScn', LM.scn);
+const c = LM.cls, type = c >= 7 ? 4 : 3, np = c >= 5 ? 2 : 1, V = type === 4 ? 52 : 50;
+const icon = PCLASS[c]/V/np, ipk = PPEAK[c]/V/np, tlim = type === 4 ? 6 : 10;
+const ilps = Math.min(99.9/V/np, 1.3);
+const up = type === 4 ? [[1e-5, 1.75], [75e-3, 1.75], [75e-3, 1.3], [4, 1.3], [4, ilps], [10, ilps]] : [[1e-5, 1.75], [75e-3, 1.75], [75e-3, 0.85], [10, 0.85]];
+const lo = [[1e-5, ipk], [50e-3, ipk], [50e-3, icon], [10, icon]];
+const upAt = t => { let v = up[0][1]; for (let k = 0; k < up.length; k++) if (t >= up[k][0]) v = up[k][1]; return v; };
+// scenario traces: [[t, I]...] and outcome
+let tr, out;
+// traces are in time since the event (log axis): [[t, I], ...]
+const T0 = 1e-5;
+if (LM.scn === 'ok') { tr = [[T0, icon*0.85], [10, icon*0.85]]; out = ['ok', '電流在下界以下：PSE 必須持續供電']; }
+else if (LM.scn === 'peak') { tr = [[T0, ipk], [0.04, ipk], [0.04, icon*0.85], [10, icon*0.85]]; out = ['ok', `尖峰 ${fx(ipk, 2)} A 持續 40 ms ≤ 50 ms：在峰值下界內，必須供電（每 1 秒最多 50 ms）`]; }
+else if (LM.scn === 'long') { const ip = Math.min(ipk*1.05, upAt(1) - 0.02); tr = [[T0, ip], [0.06, ip], [0.06, 0], [10, 0]]; out = ['info', `${fx(ip, 2)} A 持續超過 50 ms：高於下界、低於上界，規範讓 PSE 自行決定；圖中示範常見做法：PCUT 設定值持續 T<sub>CUT</sub>（50–75 ms）後斷電`]; }
+else if (LM.scn === 'over') { const io = type === 4 ? 1.1 : 1.0, tc = type === 4 ? 4 : 0.075; tr = [[T0, io], [tc, io], [tc, 0], [10, 0]];
+out = type === 4 ? ['warn', `1.1 A 低於 Type 4 的 1.3 A 上界，但高於 LPS 限制 ${fx(ilps, 2)} A：最晚在 4 s 時必須斷電`] : ['warn', `1.0 A 超過 Type 3 的 0.85 A 上界：最晚 75 ms 內必須斷電`]; }
+else { tr = [[T0, 1.6], [3e-5, 1.2], [0.075, 1.2], [0.075, 0], [10, 0]]; out = ['warn', `短路：PSE 把電流限制在 I<sub>LIM</sub>（下界與上界之間），至少維持 ${tlim} ms；PI 電壓掉出範圍時可立即斷電，圖中畫的是最晚 75 ms 斷電`]; }
+badges('limBadges', [out, ['info', `Type ${type} PSE · ${np === 2 ? '4 對' : '2 對'} · I<sub>Con-2P</sub> ≈ ${fx(icon, 3)} A · I<sub>Peak-2P</sub> ≈ ${fx(ipk, 3)} A`], ['info', `限流至少維持 T<sub>LIM</sub> = ${tlim} ms`]]);
+const s = clear($('limSvg')), lx0 = Math.log(1e-5), lx1 = Math.log(10);
+const X = t => 70 + (Math.log(t) - lx0)/(lx1 - lx0)*870, Y = i => 320 - i/2*290;
+axis(s, 70, 20, 940, 320);
+[[1e-5, '10 µs'], [1e-4, '100 µs'], [1e-3, '1 ms'], [1e-2, '10 ms'], [0.1, '100 ms'], [1, '1 s'], [10, '10 s']].forEach(([t, l]) => { svgEl('text', {x:X(t), y:338, 'text-anchor':'middle', class:'tick'}, s, l); svgEl('line', {x1:X(t), y1:20, x2:X(t), y2:320, class:'axis', opacity:.4}, s); });
+for (let i = 0; i <= 2; i += 0.5) svgEl('text', {x:62, y:Y(i) + 4, 'text-anchor':'end', class:'tick'}, s, i.toFixed(1) + ' A');
+// implementation-defined band between bounds
+const band = []; up.forEach(p => band.push(X(p[0]) + ',' + Y(p[1]))); lo.slice().reverse().forEach(p => band.push(X(p[0]) + ',' + Y(p[1])));
+svgEl('polygon', {points:band.join(' '), class:'zone-may'}, s);
+svgEl('rect', {x:X(1e-5), y:Y(1.75), width:X(tlim/1000) - X(1e-5), height:Y(ipk) - Y(1.75), fill:'var(--accent)', opacity:.08}, s);
+svgEl('text', {x:X(2e-5), y:Y(1.5), class:'lbl-sm'}, s, `限流區 I_LIM（至少 ${tlim} ms）`);
+svgEl('polyline', {points:up.map(p => X(p[0]) + ',' + Y(p[1])).join(' '), fill:'none', stroke:'var(--warn)', 'stroke-width':2.5}, s);
+svgEl('polyline', {points:lo.map(p => X(p[0]) + ',' + Y(p[1])).join(' '), fill:'none', stroke:'var(--ok)', 'stroke-width':2.5}, s);
+svgEl('text', {x:X(1e-5) + 4, y:Y(1.75) - 6, class:'ref-lbl', fill:'var(--warn)'}, s, '上界 1.75 A（10 µs 內可到 50 A）');
+if (type === 4) svgEl('text', {x:X(0.1), y:Y(1.3) - 6, class:'ref-lbl', fill:'var(--warn)'}, s, '1.3 A 到 4 s，之後 LPS 99.9 W');
+else svgEl('text', {x:X(0.1), y:Y(0.85) - 6, class:'ref-lbl', fill:'var(--warn)'}, s, '0.85 A');
+svgEl('text', {x:X(0.06), y:Y(icon) + 16, class:'ref-lbl', fill:'var(--ok)'}, s, 'I_Con-2P');
+svgEl('text', {x:X(0.012), y:Y(ipk) + 16, class:'ref-lbl', fill:'var(--ok)'}, s, 'I_Peak-2P（50 ms）');
+svgEl('polyline', {points:tr.map(([t, i]) => X(t) + ',' + Y(Math.min(i, 2))).join(' '), fill:'none', stroke:'var(--accent)', 'stroke-width':3}, s);
+svgEl('text', {x:505, y:354, 'text-anchor':'middle', class:'tick'}, s, '事件發生後的時間 Time since event（對數刻度）');
+}
+limUpdate();
+/* ---------- 6. MPS ---------- */
+const MP = {type:'34', cls:'lo', amp:12, on:8, off:280};
+const mpsSync = sliders([
+{k:'amp', zh:'脈衝電流', en:'Pulse current', min:1, max:30, step:0.5, fmt:v => v.toFixed(1) + ' mA'},
+{k:'on', zh:'脈衝寬度', en:'On time', min:1, max:120, step:1, fmt:v => v.toFixed(0) + ' ms'},
+{k:'off', zh:'脈衝間隔（低電流時間）', en:'Off time', min:20, max:500, step:5, fmt:v => v.toFixed(0) + ' ms'}
+], MP, $('mpsParams'), mpsUpdate);
+[['af／at PD：10 mA · 75／250 ms', {type:'12', cls:'lo', amp:10.5, on:75, off:250}], ['bt 短 MPS：10 mA · 7／310 ms', {type:'34', cls:'lo', amp:10.5, on:7, off:310}], ['Class 5–8 只吸 10 mA', {type:'34', cls:'hi', amp:10, on:7, off:300}], ['脈衝太短（5 ms）', {type:'34', cls:'lo', amp:12, on:5, off:250}], ['間隔太長（420 ms）', {type:'34', cls:'lo', amp:12, on:8, off:420}]].forEach(([l, v]) => {
+const b = document.createElement('button'); b.type = 'button'; b.textContent = l;
+b.addEventListener('click', () => { Object.assign(MP, v); mpsSync(); mpsUpdate(); }); $('mpsPresets').appendChild(b);
+});
+segGroup('mpsType', v => { MP.type = v; mpsUpdate(); });
+segGroup('mpsCls', v => { MP.cls = v; mpsUpdate(); });
+function mpsUpdate(){
+setSeg('mpsType', MP.type); setSeg('mpsCls', MP.cls);
+const bt = MP.type === '34', hold = bt ? (MP.cls === 'hi' ? [4, 14] : [4, 9]) : [5, 10];
+const tmps = bt ? 6 : 60, drop = 300, Tm = 2000, per = MP.on + MP.off;
+const iAt = t => (t % per) < MP.on ? MP.amp : 0.5;
+let run = 0, last = 0, removed = null, valid = [];
+const dropPts = [];
+for (let t = 0; t <= Tm; t++) {
+if (removed != null) break;
+const i = iAt(t);
+if (i >= hold[1]) { run++; if (run === tmps) valid.push(t - tmps + 1); if (run >= tmps) last = t; } else run = 0;
+const since = t - last; if (t % 5 === 0) dropPts.push([t, since]);
+if (since > drop) removed = t;
+}
+const b = [];
+b.push(['info', `I<sub>Hold</sub> ${hold[0]}–${hold[1]} mA · T<sub>MPS</sub> ${tmps} ms · T<sub>MPDO</sub> 300–400 ms`]);
+if (MP.amp < hold[1]) b.push(['warn', `${MP.amp} mA 低於 I<sub>Hold</sub> 上限 ${hold[1]} mA：嚴格的 PSE 不算數`]);
+if (MP.on < tmps) b.push(['warn', `脈衝 ${MP.on} ms 短於 T<sub>MPS</sub> ${tmps} ms`]);
+if (MP.off > drop) b.push(['warn', `間隔 ${MP.off} ms 可能超過 T<sub>MPDO</sub>`]);
+b.push(removed == null ? ['ok', '結果：維持供電'] : ['warn', `結果：約 ${removed} ms 時 PSE 斷電`]);
+const pdSpec = bt ? (MP.cls === 'hi' ? '16 mA · ≥ 7 ms · 間隔 ≤ 310 ms' : '10 mA · ≥ 7 ms · 間隔 ≤ 310 ms') : '10 mA · ≥ 75 ms · 間隔 ≤ 250 ms';
+b.push(['info', 'PD 端規範：' + pdSpec]);
+badges('mpsBadges', b);
+const s = clear($('mpsSvg')), X = t => 60 + t/Tm*900, Y = i => 230 - i/32*200, Yd = d => 230 - Math.min(d, 420)/420*200;
+axis(s, 60, 20, 960, 230);
+for (let t = 0; t <= Tm; t += 250) svgEl('text', {x:X(t), y:248, 'text-anchor':'middle', class:'tick'}, s, t + ' ms');
+for (let i = 0; i <= 30; i += 10) svgEl('text', {x:52, y:Y(i) + 4, 'text-anchor':'end', class:'tick'}, s, i + ' mA');
+svgEl('rect', {x:60, y:Y(hold[1]), width:900, height:Y(hold[0]) - Y(hold[1]), fill:'var(--muted)', opacity:.12}, s);
+svgEl('text', {x:64, y:Y(hold[1]) - 4, class:'ref-lbl', fill:'var(--muted)'}, s, `I_Hold ${hold[0]}–${hold[1]} mA`);
+svgEl('line', {x1:60, y1:Yd(300), x2:960, y2:Yd(300), stroke:'var(--off)', class:'ref'}, s);
+svgEl('text', {x:956, y:Yd(300) - 4, 'text-anchor':'end', class:'ref-lbl', fill:'var(--off)'}, s, 'T_MPDO 300 ms');
+const end = removed == null ? Tm : removed, pts = [];
+for (let t = 0; t <= end; t++) { const i = iAt(t), p = iAt(t - 1); if (t === 0 || i !== p) { pts.push(X(t) + ',' + Y(t === 0 ? i : p)); pts.push(X(t) + ',' + Y(i)); } }
+pts.push(X(end) + ',' + Y(iAt(end)));
+if (removed != null) { pts.push(X(end) + ',' + Y(0)); pts.push(X(Tm) + ',' + Y(0)); }
+svgEl('polyline', {points:pts.join(' '), fill:'none', stroke:'var(--accent)', 'stroke-width':2.2}, s);
+valid.forEach(t0 => svgEl('rect', {x:X(t0), y:Y(MP.amp) - 2, width:Math.max(2, X(t0 + tmps) - X(t0)), height:6, fill:'var(--ok)'}, s));
+svgEl('polyline', {points:dropPts.map(([t, d]) => X(t) + ',' + Yd(d)).join(' '), fill:'none', stroke:'var(--off)', 'stroke-width':1.6, 'stroke-dasharray':'4 3'}, s);
+if (removed != null) { svgEl('line', {x1:X(removed), y1:20, x2:X(removed), y2:230, stroke:'var(--warn)', 'stroke-width':2}, s); svgEl('text', {x:X(removed) + 4, y:34, class:'ref-lbl', fill:'var(--warn)'}, s, 'PSE 斷電'); }
+}
+mpsUpdate();
+/* ---------- 7. switch budget simulator ---------- */
+const DEV = {
+none:{zh:'（空）', cls:0, typ:0, peak:0, lldp:0, auto:false},
+sens:{zh:'門禁／感測器', cls:1, typ:2.5, peak:3.5, lldp:0, auto:false},
+phone:{zh:'VoIP 話機', cls:2, typ:4.5, peak:5.5, lldp:5.5, auto:true},
+cam:{zh:'IP Cam（IR）', cls:3, typ:6, peak:10, lldp:10, auto:true},
+ap6:{zh:'Wi-Fi 6 AP', cls:4, typ:16, peak:22, lldp:22, auto:true},
+thin:{zh:'精簡型電腦', cls:6, typ:28, peak:45, lldp:0, auto:false},
+ap7:{zh:'Wi-Fi 7 AP', cls:6, typ:32, peak:42, lldp:42, auto:true},
+ptz:{zh:'PTZ＋加熱器', cls:8, typ:40, peak:68, lldp:68, auto:true}
+};
+const PRI = {c:{zh:'Critical', r:0}, h:{zh:'High', r:1}, l:{zh:'Low', r:2}};
+const SW = {mode:'class', load:'typ', dem:1, budget:370, guard:0, ports:Array.from({length:24}, () => ({d:'none', p:'l'}))};
+const PRESETS = {
+'辦公室混合':'phone*8,ap6*4,ap7*2,cam*4,thin*2,sens*2,ptz*1',
+'全部 Wi-Fi 7 AP':'ap7*12,ptz*2',
+'安控（攝影機為主）':'cam*16,ptz*4,sens*2'
+};
+sliders([{k:'budget', zh:'PoE 總預算', en:'PSU budget', min:120, max:740, step:10, fmt:v => v.toFixed(0) + ' W'}, {k:'guard', zh:'保留量', en:'Guard band', min:0, max:60, step:1, fmt:v => v.toFixed(0) + ' W'}], SW, $('swParams'), swUpdate);
+Object.keys(PRESETS).forEach(k => {
+const b = document.createElement('button'); b.type = 'button'; b.textContent = k;
+b.addEventListener('click', () => {
+const list = []; PRESETS[k].split(',').forEach(x => { const [d, n] = x.split('*'); for (let i = 0; i < +n; i++) list.push(d); });
+SW.ports.forEach((p, i) => { p.d = list[i] || 'none'; p.p = ['ap7', 'ptz', 'sens'].includes(p.d) ? 'c' : p.d === 'ap6' || p.d === 'cam' ? 'h' : 'l'; });
+renderPorts(); swUpdate();
+}); $('swPresets').appendChild(b);
+});
+const clearB = document.createElement('button'); clearB.type = 'button'; clearB.textContent = '全部清空';
+clearB.addEventListener('click', () => { SW.ports.forEach(p => { p.d = 'none'; p.p = 'l'; }); renderPorts(); swUpdate(); });
+$('swPresets').appendChild(clearB);
+segGroup('swMode', v => { SW.mode = v; swUpdate(); });
+segGroup('swLoad', v => { SW.load = v; swUpdate(); });
+segGroup('swDem', v => { SW.dem = +v; swUpdate(); });
+function renderPorts(){
+const box = $('swPorts'); box.innerHTML = '';
+SW.ports.forEach((p, i) => {
+const el = document.createElement('div'); el.className = 'port'; el.id = 'port' + i;
+el.innerHTML = `<div class="ph"><b>P${i + 1}</b><span class="st"></span></div>
+<select aria-label="P${i + 1} 設備">${Object.keys(DEV).map(k => `<option value="${k}"${k === p.d ? ' selected' : ''}>${DEV[k].zh}${k === 'none' ? '' : ' · C' + DEV[k].cls}</option>`).join('')}</select>
+<select aria-label="P${i + 1} 優先權">${Object.keys(PRI).map(k => `<option value="${k}"${k === p.p ? ' selected' : ''}>優先權 ${PRI[k].zh}</option>`).join('')}</select>
+<div class="rd"></div>`;
+const [sd, sp] = el.querySelectorAll('select');
+sd.addEventListener('change', () => { p.d = sd.value; swUpdate(); });
+sp.addEventListener('change', () => { p.p = sp.value; swUpdate(); });
+box.appendChild(el);
+});
+}
+// power the PSE must reserve for a port under the current mode
+function want(dev){
+const D = DEV[dev], draw = SW.load === 'peak' ? D.peak : D.typ;
+const realPse = w => pseW(w, D.cls, 54, (D.cls >= 5 ? 6.25 : 12.5)*0.5);   // typical: 54 V, 50 m cable
+if (SW.mode === 'class') return {res:PCLASS[D.cls], how:'Class ' + D.cls};
+if (SW.mode === 'lldp') return D.lldp ? {res:pseW(D.lldp, D.cls), how:'LLDP ' + D.lldp + ' W'} : {res:PCLASS[D.cls], how:'無 LLDP → Class'};
+if (SW.mode === 'usage') return {res:realPse(draw), how:'實際用量'};
+if (D.auto) { const m = D.cls >= 7 ? 1.75 : D.cls >= 5 ? 0.75 : 0.5; return {res:realPse(D.peak) + m, how:'Autoclass 實測＋' + m + ' W'}; }
+return {res:PCLASS[D.cls], how:'不支援 → Class'};
+}
+function swUpdate(){
+setSeg('swMode', SW.mode); setSeg('swLoad', SW.load); setSeg('swDem', SW.dem);
+const avail = SW.budget - SW.guard;
+const order = SW.ports.map((p, i) => ({p, i})).filter(o => o.p.d !== 'none').sort((a, b) => PRI[a.p.p].r - PRI[b.p.p].r || a.i - b.i);
+let used = 0; const R = {};
+order.forEach(({p, i}) => {
+const D = DEV[p.d], w = want(p.d);
+if (used + w.res <= avail + 1e-9) { R[i] = {st:'on', res:w.res, how:w.how}; used += w.res; return; }
+if (SW.dem && SW.mode !== 'usage') {
+for (const a of [6, 4, 3].filter(a => a < D.cls)) if (used + PCLASS[a] <= avail + 1e-9) { R[i] = {st:'dem', res:PCLASS[a], how:'降級到 Class ' + a, a}; used += PCLASS[a]; return; }
+}
+R[i] = {st:'off', res:0, how:SW.mode === 'usage' ? '超出預算被卸載' : '預算不足'};
+});
+let actual = 0;
+SW.ports.forEach((p, i) => {
+const el = $('port' + i); if (!el) return;
+const r = R[i], D = DEV[p.d];
+el.className = 'port ' + (p.d === 'none' ? 's-empty' : 's-' + r.st);
+el.querySelector('.st').textContent = p.d === 'none' ? '' : r.st === 'on' ? '供電中' : r.st === 'dem' ? '降級' : '不供電';
+if (p.d === 'none') { el.querySelector('.rd').textContent = ''; return; }
+const draw = r.st === 'off' ? 0 : Math.min(SW.load === 'peak' ? D.peak : D.typ, r.st === 'dem' ? PDCLS[r.a] : Infinity);
+actual += r.st === 'off' ? 0 : pseW(draw, D.cls, 54, (D.cls >= 5 ? 6.25 : 12.5)*0.5);
+el.querySelector('.rd').textContent = `保留 ${fx(r.res, 1)} W · ${r.how}`;
+});
+const n = order.length, on = Object.values(R).filter(r => r.st === 'on').length, dem = Object.values(R).filter(r => r.st === 'dem').length, off = n - on - dem;
+const over = SW.mode === 'usage' && SW.load === 'peak';
+badges('swBadges', [['info', `已接 ${n} 台`], ['ok', `全額供電 ${on}`], dem ? ['warn', `降級 ${dem}`] : ['ok', '無降級'], off ? ['warn', `不供電 ${off}`] : ['ok', '全部有電'],
+['info', `已保留 ${fx(used, 0)} ／ ${fx(avail, 0)} W`], ['info', `實際耗電約 ${fx(actual, 0)} W`]]);
+const bud = $('swBud'); bud.innerHTML = '';
+let x = 0; const scale = Math.max(SW.budget, used) || 1;
+order.forEach(({p, i}) => { const r = R[i]; if (!r.res) return; const el = document.createElement('i');
+el.style.left = (x/scale*100) + '%'; el.style.width = (r.res/scale*100) + '%';
+el.style.background = r.st === 'dem' ? 'var(--on)' : PRI[p.p].r === 0 ? 'var(--accent)' : PRI[p.p].r === 1 ? 'var(--teal)' : 'var(--ok)';
+el.title = `P${i + 1} ${DEV[p.d].zh} ${fx(r.res, 1)} W`; bud.appendChild(el); x += r.res; });
+const cap = document.createElement('span'); cap.className = 'cap'; cap.style.left = (avail/scale*100) + '%'; bud.appendChild(cap);
+$('swScale').innerHTML = `<span>0 W</span><span>可分配 ${fx(avail, 0)} W（紅線）</span><span>${fx(scale, 0)} W</span>`;
+const modeTxt = {
+class:'<b>依 Class</b>：每個埠直接保留該 Class 的 PSE 端上限（例如 Class 4 保留 30 W、Class 8 保留 90 W）。最安全，任何 PD 都不會超出保留量，但保留量遠大於實際用量，接得最少。',
+lldp:'<b>依 LLDP</b>：PD 上電後用 LLDP 告訴交換器實際需要多少（PD 端功率），交換器加上最壞線損換算回 PSE 端再保留。沒送 LLDP 的設備退回依 Class。比依 Class 省很多，仍有規範保障。',
+usage:'<b>依實際用量</b>（動態）：只扣每個埠<b>此刻</b>量到的耗電。接得最多，但切到「全部尖峰」就會看到總用量超過預算，交換器只能臨時卸載低優先權的埠——這就是動態模式的風險。',
+auto:'<b>Autoclass</b>：支援的 PD 上電後先刻意跑最大功率，PSE 在 1.4–3.5 s 之間量測（已包含實際線損），再加一點餘量（Class 1–4 加 0.5 W、5–6 加 0.75 W、7–8 加 1.75 W）作為保留量。不支援的 PD 退回依 Class。'
+}[SW.mode];
+$('swInfo').innerHTML = `<p>${modeTxt}</p><p class="en">Bars: blue Critical, teal High, green Low, orange demoted. Ports are served by priority, then by lower port number.</p>` + (over ? '<p style="color:var(--warn);font-weight:700">尖峰同時發生：被卸載的埠是原本已經在用的設備，使用者會看到設備突然重開機。</p>' : '');
+}
+renderPorts();
+(function(){ const list = []; PRESETS['辦公室混合'].split(',').forEach(x => { const [d, n] = x.split('*'); for (let i = 0; i < +n; i++) list.push(d); });
+SW.ports.forEach((p, i) => { p.d = list[i] || 'none'; p.p = ['ap7', 'ptz', 'sens'].includes(p.d) ? 'c' : p.d === 'ap6' || p.d === 'cam' ? 'h' : 'l'; }); renderPorts(); })();
+swUpdate();
+})();
+</script>
+</body>
+</html>

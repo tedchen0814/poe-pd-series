@@ -1,0 +1,521 @@
+<!--#TITLE-->
+LLDP 功率協商
+<!--#H1-->
+LLDP 功率協商
+<!--#H1_EN-->
+LLDP power negotiation · Data Link Layer classification · Power via MDI TLV bit by bit
+<!--#CHIP-->
+0.1 W <span>·</span> 29 bytes
+<!--#LEDE-->
+<p class="lede">實體層分級（02 頁的分級事件）只能用幾個固定等級說話。PD 上電、網路通了之後，可以再用 LLDP（Link Layer Discovery Protocol，鏈結層探索協定）封包裡的 Power via MDI TLV（Type-Length-Value 欄位，MDI 是 Medium Dependent Interface，也就是 RJ45 線對）跟 PSE <b>以 0.1 W 為單位</b>重新協商功率。規範把這件事叫做 DLL classification（Data Link Layer classification，資料鏈結層分級）。這一頁先看協商的來回過程，再把整個 TLV 拆到每一個 bit。
+  <span class="en">After power-up, the PD and PSE renegotiate power in 0.1 W steps with the Power via MDI TLV carried in LLDP frames. First the exchange, then every bit of the TLV.</span></p>
+<!--#STYLE-->
+.grid-2>*{min-width:0}
+.gloss{width:100%;border-collapse:collapse;font-size:13.5px;min-width:560px}
+.gloss td,.gloss th{border-bottom:1px solid var(--line);padding:5px 8px;text-align:left;vertical-align:top}
+.gloss th{font-size:12.5px;color:var(--muted);background:var(--paper-2)}
+.gloss td:first-child{font-family:var(--mono);font-weight:700;white-space:nowrap}
+.gloss td:nth-child(2){font-weight:600}
+details.glossbox summary{cursor:pointer;font-weight:700;font-size:14px;margin-bottom:8px}
+.why{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.seq-msg{font:600 12px var(--mono)}
+.seq-note{fill:var(--paper-2);stroke:var(--line)}
+.lane{stroke:var(--line);stroke-width:2;stroke-dasharray:6 5}
+.bytes{display:grid;grid-template-columns:repeat(auto-fill,minmax(54px,1fr));gap:5px;margin:6px 0 10px}
+.byte{border:1.5px solid var(--c);border-radius:7px;background:color-mix(in srgb,var(--c) 10%,var(--paper));padding:3px 2px;text-align:center;cursor:pointer;font:600 15px var(--mono);color:var(--ink);line-height:1.15}
+.byte small{display:block;font:500 9.5px var(--mono);color:var(--muted)}
+.byte[aria-pressed="true"]{outline:3px solid var(--c);outline-offset:1px}
+.bits{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:3px;margin:6px 0}
+.bits.w16{grid-template-columns:repeat(16,minmax(0,1fr))}
+.bits.w24{grid-template-columns:repeat(24,minmax(0,1fr))}
+.bit{border:1px solid var(--line);border-radius:4px;text-align:center;font:700 13px var(--mono);padding:2px 0;background:var(--paper-2)}
+.bit small{display:block;font:500 8.5px var(--mono);color:var(--muted)}
+.bit.one{background:color-mix(in srgb,var(--c) 30%,var(--paper));border-color:var(--c)}
+.bitf{display:grid;gap:3px;margin-bottom:6px}
+.bitf span{border-radius:4px;font-size:11.5px;padding:2px 4px;background:color-mix(in srgb,var(--c) 14%,transparent);border:1px solid var(--c);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ftbl{width:100%;border-collapse:collapse;font-size:13px;min-width:720px}
+.ftbl th,.ftbl td{border-bottom:1px solid var(--line);padding:4px 6px;text-align:left;vertical-align:middle}
+.ftbl th{font-size:12px;color:var(--muted);background:var(--paper-2)}
+.ftbl td.m{font-family:var(--mono);white-space:nowrap}
+.ftbl tr.sel td{background:color-mix(in srgb,var(--accent) 13%,transparent)}
+.ftbl tr.grp td{font-weight:800;background:var(--paper-2);font-size:12.5px}
+.ftbl select,.ftbl input{font:inherit;font-size:12.5px;max-width:230px}
+.ftbl input[type=number]{width:90px;color:var(--ink);background:var(--paper-2);border:1px solid var(--line);border-radius:6px;padding:3px 5px}
+.ftbl .sw{display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--c);margin-right:5px;vertical-align:0}
+.hexin{width:100%;font:500 13px var(--mono);color:var(--ink);background:var(--paper-2);border:1px solid var(--line);border-radius:8px;padding:8px;min-height:62px;resize:vertical}
+.cls-map{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:4px;margin-top:8px}
+.cls-map div{border:1.5px solid var(--line);border-radius:7px;padding:4px;text-align:center;font-size:12px}
+.cls-map div b{display:block;font-family:var(--display);font-size:18px}
+.cls-map div.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 16%,transparent)}
+@media (max-width:560px){.cls-map{grid-template-columns:repeat(4,minmax(0,1fr))}}
+<!--#BODY-->
+  <section class="panel" aria-labelledby="h-gloss">
+    <h2 id="h-gloss"><span class="step">0</span>縮寫對照 <span class="en">Abbreviations used on this page</span></h2>
+    <details class="glossbox" open><summary>展開／收合 Show / hide</summary>
+    <div class="scroll-x"><table class="gloss">
+      <thead><tr><th>縮寫</th><th>完整英文名稱</th><th>中文意思與說明</th></tr></thead>
+      <tbody>
+        <tr><td>LLDP</td><td>Link Layer Discovery Protocol</td><td>鏈結層探索協定（IEEE 802.1AB）：相鄰兩台設備週期性互送的自我介紹封包，EtherType 0x88CC</td></tr>
+        <tr><td>LLDPDU</td><td>LLDP Data Unit</td><td>一個 LLDP 封包的內容，由多個 TLV 串起來</td></tr>
+        <tr><td>TLV</td><td>Type-Length-Value</td><td>型別－長度－內容的欄位格式：2 bytes 標頭（7-bit 型別＋9-bit 長度）加上內容</td></tr>
+        <tr><td>MDI</td><td>Medium Dependent Interface</td><td>媒體相關介面：RJ45 接頭與線對。Power via MDI 就是「經由網路線供電」</td></tr>
+        <tr><td>OUI</td><td>Organizationally Unique Identifier</td><td>組織唯一識別碼：IEEE 802.3 是 00-12-0F，TIA（LLDP-MED）是 00-12-BB</td></tr>
+        <tr><td>DLL</td><td>Data Link Layer (classification)</td><td>資料鏈結層分級：透過 LLDP 協商功率，相對於實體層（Physical Layer）分級事件</td></tr>
+        <tr><td>LLDP-MED</td><td>LLDP for Media Endpoint Devices</td><td>給媒體端點（話機、攝影機等）用的 LLDP 擴充（ANSI/TIA-1057），也有自己的功率 TLV</td></tr>
+        <tr><td>TIA</td><td>Telecommunications Industry Association</td><td>美國電信產業協會，制定 LLDP-MED 的組織</td></tr>
+        <tr><td>PSE</td><td>Power Sourcing Equipment</td><td>供電設備（PoE Switch）</td></tr>
+        <tr><td>PD</td><td>Powered Device</td><td>受電設備</td></tr>
+        <tr><td>PI</td><td>Power Interface</td><td>電源介面：RJ45 上的供電接點</td></tr>
+        <tr><td>4PID</td><td>4-Pair ID</td><td>PD 宣告「我支援 4 對供電」的旗標</td></tr>
+        <tr><td>DS／SS</td><td>Dual-Signature／Single-Signature</td><td>雙特徵／單一特徵 PD：兩組線對各自獨立或共用一個偵測分級特徵</td></tr>
+        <tr><td>Alt A／B、Mode A／B</td><td>Alternative A/B (PSE)、Mode A/B (PD)</td><td>兩組供電線對的名稱：PSE 端叫 Alternative，PD 端叫 Mode</td></tr>
+        <tr><td>MPS</td><td>Maintain Power Signature</td><td>維持供電特徵（見 05 頁）</td></tr>
+      </tbody>
+    </table></div>
+    </details>
+  </section>
+
+  <section class="panel" aria-labelledby="h-why">
+    <h2 id="h-why"><span class="step">1</span>為什麼上電後還要協商 <span class="en">Why negotiate after power-up</span></h2>
+    <div class="why">
+      <div class="stage" style="--c:var(--accent)"><h3><span class="no">①</span>細調：還回用不到的功率</h3><p>Class 6 的 PD 實體層要了 51 W，實際只需要 43 W，就用 LLDP 降到 43 W，交換器可以把多出來的預算給別的埠。</p><p class="en">Hand back power you will never use.</p></div>
+      <div class="stage" style="--c:var(--on)"><h3><span class="no">②</span>被降級後再要回來</h3><p>Class 8 的 PD 因為交換器當時預算不足被降到 Class 4，之後可以用 LLDP 再要 71.3 W；交換器有預算時就重新分配。</p><p class="en">Recover from power demotion.</p></div>
+      <div class="stage" style="--c:var(--teal)"><h3><span class="no">③</span>隨工作狀態調整</h3><p>攝影機白天 15 W、夜間開 IR 要 22 W，可以動態要求增減，讓交換器的預算跟著實際需求走。</p><p class="en">Follow the PD's operating state.</p></div>
+      <div class="stage" style="--c:var(--warn)"><h3><span class="no">④</span>規則</h3><p>Class 4 以上的 PD <b>必須</b>支援 LLDP 協商，PSE 可以不支援。PD <b>不可以</b>用 LLDP 要求比實體層分級更多的功率。PSE 收到新要求後要在 <b>10 秒內</b>回覆更新過的 TLV。</p><p class="en">Class 4+ PDs must support it; never request more than the physical class; the PSE answers within 10 s.</p></div>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-seq">
+    <h2 id="h-seq"><span class="step">2</span>協商過程 <span class="en">The exchange, step by step</span></h2>
+    <p class="lede" style="margin:0 0 10px">關鍵是<b>回傳</b>：每個 TLV 同時帶著「PD 要求值」和「PSE 分配值」。PD 送出時，分配值欄位填它最後收到的 PSE 分配值；PSE 送出時，要求值欄位填它最後收到的 PD 要求值。雙方看到對方原樣回傳自己的數字，才確定同步完成、新的功率才生效。
+      <span class="en">Each side echoes the other's last value; a new allocation takes effect only when both are in sync.</span></p>
+    <div class="ctl-row"><span class="lab">情境 Scenario</span>
+      <div class="seg" id="seqScn" role="group" aria-label="Scenario" style="flex-wrap:wrap"></div>
+    </div>
+    <div class="controls">
+      <button id="seqPrev" type="button">◀ 上一步 Prev</button>
+      <button id="seqNext" type="button" class="primary">下一步 Next ▶</button>
+      <button id="seqAll" type="button">全部顯示 Show all</button>
+      <span class="num" id="seqPos" style="font-size:13px;color:var(--muted)"></span>
+    </div>
+    <div class="grid-2" style="align-items:start">
+      <div class="scroll-x"><svg id="seqSvg" viewBox="0 0 560 470" role="img" aria-label="PD 與 PSE 之間的 LLDP 往來時序圖"></svg></div>
+      <div>
+        <div class="infobox" id="seqInfo" style="--c:var(--accent)"></div>
+        <div class="kv" id="seqKv"></div>
+        <div class="presets" id="seqLoad"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-tlv">
+    <h2 id="h-tlv"><span class="step">3</span>Power via MDI TLV：每一個 bit <span class="en">Power via MDI TLV, bit by bit</span></h2>
+    <p class="lede" style="margin:0 0 10px">TLV 標頭 2 bytes：前 7 bits 是型別 127（組織自訂），後 9 bits 是內容長度。內容以 OUI 00-12-0F（IEEE 802.3）和子類型 0x02（Power via MDI）開頭。舊版只有 7 bytes，802.3at 擴充到 <b>12 bytes</b>，802.3bt 再擴充到 <b>29 bytes</b>。點任何一個 byte 看它的 bit；改下表的欄位，hex 會即時更新；也可以把抓包工具（例如 Wireshark）的 hex 貼進來解碼。
+      <span class="en">Header: 7-bit type 127 + 9-bit length. Content starts with OUI 00-12-0F and subtype 2. Legacy 7 bytes, at 12 bytes, bt 29 bytes.</span></p>
+    <div class="opts" style="display:flex;flex-wrap:wrap;gap:10px 22px;margin-bottom:8px">
+      <div class="ctl"><span class="lab" style="font-weight:700;color:var(--muted)">格式</span><div class="seg" id="tlvFmt" role="group" aria-label="Format"><button type="button" data-v="12">802.3at · 12 bytes</button><button type="button" data-v="29">802.3bt · 29 bytes</button></div></div>
+    </div>
+    <div class="presets" id="tlvPresets" style="margin-top:0"><span>範例 Presets：</span></div>
+    <div class="bytes" id="tlvBytes"></div>
+    <div class="infobox" id="tlvBit" style="--c:var(--accent);min-height:0"></div>
+    <div class="scroll-x" style="margin-top:12px"><table class="ftbl" id="tlvTbl"></table></div>
+    <div style="margin-top:12px">
+      <label for="hexIn" style="font-weight:700;font-size:14px">貼上 hex 解碼 <span class="en" style="display:inline">Paste hex (with or without the 2-byte header)</span></label>
+      <textarea id="hexIn" class="hexin" spellcheck="false"></textarea>
+      <div class="controls" style="margin-top:6px"><button type="button" id="hexGo" class="primary">解碼 Decode</button><span id="hexMsg" style="font-size:13px"></span></div>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-map">
+    <h2 id="h-map"><span class="step">4</span>協商結果會改變核准 Class <span class="en">Negotiated power ↔ assigned Class</span></h2>
+    <p class="lede" style="margin:0 0 10px">協商完成後，PSE 的 PSEAllocatedPowerValue 和 PD 的 PDMaxPowerValue 都變成新值，<b>核准 Class 也跟著變</b>，所有跟 Class 有關的要求（MPS 電流、峰值功率等）都要依新的 Class 走。
+      <span class="en">After a successful exchange, the assigned Class follows the negotiated value.</span></p>
+    <div class="params" id="mapParams"></div>
+    <div class="cls-map" id="clsMap"></div>
+    <div class="grid-2" style="margin-top:14px">
+      <div class="scroll-x"><table class="tbl" style="min-width:420px">
+        <thead><tr><th>PSE 允許的分配值</th><th>PSEAllocatedPowerValue</th><th>…alt(A／B)</th></tr></thead>
+        <tbody><tr><td>2 對供電</td><td class="m">1–255</td><td class="m">0</td></tr><tr><td>4 對 · 單一特徵</td><td class="m">1–999</td><td class="m">0</td></tr><tr><td>雙特徵 PD</td><td class="m">0</td><td class="m">1–499（每組）</td></tr></tbody>
+      </table></div>
+      <div class="scroll-x"><table class="tbl" style="min-width:420px">
+        <thead><tr><th>PD 允許的要求值</th><th>PDRequestedPowerValue</th><th>…mode(A／B)</th></tr></thead>
+        <tbody><tr><td>單一特徵</td><td class="m">1–999</td><td class="m">0</td></tr><tr><td>雙特徵 · 2 對供電</td><td class="m">1–255</td><td class="m">1–499</td></tr><tr><td>雙特徵 · 4 對供電</td><td class="m">0</td><td class="m">1–499（每組）</td></tr></tbody>
+      </table></div>
+    </div>
+    <p style="font-size:13px;color:var(--muted);margin:8px 0 0">2 對供電上限 255（25.5 W）；遇到故障只能用 2 對時，PSE／PD 可以使用到 499。單位都是 0.1 W。</p>
+  </section>
+
+  <section class="panel" aria-labelledby="h-med">
+    <h2 id="h-med"><span class="step">5</span>LLDP-MED 與交換器實作 <span class="en">LLDP-MED and what switches do</span></h2>
+    <div class="grid-2" style="align-items:start">
+      <div>
+        <h3 style="margin:0 0 6px;font-size:16px">LLDP-MED Extended Power-via-MDI TLV</h3>
+        <p style="margin:0 0 6px;font-size:14px">LLDP-MED 是 TIA 為話機等端點定義的擴充（ANSI/TIA-1057），比 802.3at 的功率協商更早被廣泛使用。它的功率 TLV 很短，只能單向宣告，沒有回傳同步機制：</p>
+        <div class="scroll-x"><table class="tbl" style="min-width:460px">
+          <thead><tr><th>位置</th><th>內容</th></tr></thead>
+          <tbody>
+            <tr><td class="m">OUI＋子類型</td><td>00-12-BB（TIA）＋ 0x04</td></tr>
+            <tr><td class="m">byte 4 bit 7–6</td><td>Power Type：0 PSE、1 PD</td></tr>
+            <tr><td class="m">byte 4 bit 5–4</td><td>Power Source：PSE 端 1 主電源、2 備援；PD 端 1 來自 PSE、2 本地、3 兩者</td></tr>
+            <tr><td class="m">byte 4 bit 3–0</td><td>Priority：1 Critical、2 High、3 Low</td></tr>
+            <tr><td class="m">byte 5–6</td><td>Power Value：0.1 W 為單位</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+      <div>
+        <h3 style="margin:0 0 6px;font-size:16px">交換器怎麼用這些值 <span class="en" style="display:inline">How switches use them</span></h3>
+        <ul class="steps">
+          <li>常見的分配模式設定有「依 Class」「依 LLDP」「依實際用量」或混合（05 頁的模擬器可以實際切換）。</li>
+          <li>依 LLDP 時，交換器把 PD 要求的功率（PD 端）加上設定的線損換算成 PSE 端預算；沒收到 LLDP 的埠退回依 Class。</li>
+          <li>許多交換器同時接受 IEEE 802.3 與 LLDP-MED 兩種 TLV，兩者都出現時以 IEEE 802.3 版優先；也有廠商預設只送其中一種，要在介面設定開啟。</li>
+          <li>PD 端常見問題：交換器關掉 LLDP、或只開 LLDP-MED，導致 PD 一直停在實體層的功率；排查時用 Wireshark 抓 0x88CC 封包，看雙方是否都送了 Power via MDI TLV、要求值與分配值是否互相回傳。</li>
+        </ul>
+        <p style="font-size:13px;color:var(--muted)">IEEE 另外定義了選用的 <b>Power via MDI Measurements TLV</b>：雙方可以互相回報電壓、電流、功率、能量的量測值與量測不確定度，最後 2 bytes 還有「PSE 電價指數」，讓 PD 知道目前電價相對高低。</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-notes">
+    <h2 id="h-notes"><span class="step">6</span>實務注意事項 <span class="en">Practical notes</span></h2>
+    <div class="note-key"><span><span class="src ieee">IEEE</span> IEEE 802.3 規範</span><span><span class="src ti">廠商</span> 晶片廠／模組廠應用筆記</span><span><span class="src add">補充</span> 一般經驗</span></div>
+    <div class="ngroups">
+      <div class="ngroup" style="--c:var(--on)">
+        <h3>增加與減少的順序 <span class="en">Order matters</span></h3>
+        <ul>
+          <li><b>要更多：先要、確認後再加負載</b><span class="src ti">Silvertel</span><br>送出較大的要求值後，要等收到 PSE 回來的分配值已更新，才能把負載加上去；否則會超過目前的分配被 PSE 斷電。<span class="en">Increase: request, wait for the new allocation, then add load.</span></li>
+          <li><b>要更少：先降負載、再送要求</b><span class="src ti">Silvertel</span><br>先把負載降到新數值以下，再送出較小的要求值，並確認 PSE 回傳的分配值已更新。<span class="en">Decrease: shed load first, then request.</span></li>
+        </ul>
+      </div>
+      <div class="ngroup" style="--c:var(--accent)">
+        <h3>時間 <span class="en">Timing</span></h3>
+        <ul>
+          <li><b>PSE 10 秒內回覆</b><span class="src ieee">IEEE</span><br>PSE 收到帶有新要求值的 LLDPDU 後，要在 10 秒內送出分配值已更新的 TLV。很多開源 LLDP 實作預設每 30 秒才送一次，必須在收到變更時立即多送一次。<span class="en">Send the updated TLV within 10 s, not at the next 30 s tick.</span></li>
+          <li><b>at PD 的開機流程</b><span class="src ti">Silvertel</span><br>舊式 at PD 上電先限制在 13 W 以下，等 PSE 的 LLDP；若沒收到但有 2 次事件分級旗標，代表是 Type 2 PSE，可直接用 25.5 W。<span class="en">Legacy at flow: stay under 13 W until LLDP or the 2-event flag confirms a Type 2 PSE.</span></li>
+        </ul>
+      </div>
+      <div class="ngroup" style="--c:var(--ok)">
+        <h3>實作細節 <span class="en">Implementation</span></h3>
+        <ul>
+          <li><b>第一次送出時兩欄填一樣</b><span class="src ti">Silvertel</span><br>PD 第一次送 TLV 時，要求值與分配值都填自己想要的功率；之後分配值欄位一律回傳最後收到的 PSE 分配值。<span class="en">First frame: both fields carry the desired power; afterwards echo the PSE's last value.</span></li>
+          <li><b>目的位址用 01-80-C2-00-00-0E</b><span class="src add">補充</span><br>這個 LLDP 多播位址不會被交換器轉送，只在這一段鏈路上有效，正好符合 PD 跟它直接相連的 PSE 協商的需求。<span class="en">Use the nearest-bridge address so frames stay on the link.</span></li>
+          <li><b>PSE 最大可用功率只是提示</b><span class="src ieee">IEEE</span><br>bt 的 PSE maximum available power 告訴 PD「現在要多少可能會成功」，不是分配；PD 仍要送要求、看分配值有沒有變。<span class="en">Maximum available power is a hint, not an allocation.</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+<!--#FOOTER-->
+數值依據：Power via MDI TLV 欄位定義依 IEEE 802.3 Clause 79（802.3at／bt 擴充），DLL 分級規則依 Clause 33.6 與 Clause 145.5，並對照 <a href="https://ethernetalliance.org/wp-content/uploads/2019/12/WP_EA_Overview8023bt_V2p1_FINAL.pdf" target="_blank" rel="noopener">Ethernet Alliance 802.3bt 白皮書 v2.1</a>（5.4 節、Table 11、第 11 章 Table 21）；每個 bit 的位置對照 <a href="https://github.com/wireshark/wireshark/blob/master/epan/dissectors/packet-lldp.c" target="_blank" rel="noopener">Wireshark LLDP 解析器原始碼</a>；PSE／PD 允許值範圍（Table 145-41／145-42）依 IEEE 802.3bt 工作小組 <a href="https://grouper.ieee.org/groups/802/3/bt/public/sep17/yseboodt_04_0917_LLDP.pdf" target="_blank" rel="noopener">yseboodt_04_0917</a>；PSE 10 秒回覆要求依 Clause 33.6（見 <a href="https://github.com/lldpd/lldpd/issues/249" target="_blank" rel="noopener">lldpd issue #249</a> 引述）；增減功率順序與 at PD 開機流程參考 <a href="https://silvertel.com/images/appsnotes/ANX-POE-Data-Link-Layer-Classification.pdf" target="_blank" rel="noopener">Silvertel DLL 應用筆記</a>。Power down 欄位：6-bit 請求碼＋18-bit 時間；2015 年提案稿的 8-bit 觸發碼為 0xDD，定稿改為 6-bit 欄位，本頁以 0x1D（0xDD 的低 6 bits）作為觸發碼，尚待 IEEE 原文確認。協商情境中的功率數字為教學範例。
+<br>Field layout per IEEE 802.3 Clause 79 cross-checked with the Wireshark LLDP dissector; exchange rules per Clauses 33.6 and 145.5. The power-down trigger code 0x1D is pending confirmation against the standard text.
+<!--#SCRIPT-->
+(function(){
+  const clsOf = v => v <= 0 ? '—' : v <= 39 ? 1 : v <= 65 ? 2 : v <= 130 ? 3 : v <= 255 ? 4 : v <= 400 ? 5 : v <= 510 ? 6 : v <= 620 ? 7 : 8;
+  const W = v => (v/10).toFixed(1) + ' W';
+  const badgesHtml = list => list.map(([k, t]) => `<span class="badge ${k}">${t}</span>`).join('');
+
+  /* ================= TLV model ================= */
+  // every sub-field: key, byte offset (from OUI), byte width, bit mask within that width, label, options or kind
+  const C = {hdr:'var(--muted)', id:'var(--muted)', a:'var(--accent)', p:'var(--on)', t:'var(--teal)', o:'var(--ok)', x:'var(--off)', w:'var(--warn)'};
+  const FIELDS = [
+    {g:'OUI 與子類型', zh:'OUI 與子類型', en:'OUI + subtype', o:0, n:4, c:C.id, fixed:true, subs:[{k:'oui', m:0xFFFFFF00, zh:'OUI 00-12-0F（IEEE 802.3）', fixedV:0x00120F02}]},
+    {g:'at', zh:'MDI 電源支援', en:'MDI power support', o:4, n:1, c:C.a, subs:[
+      {k:'portClass', m:0x01, zh:'埠角色 Port class', opt:{1:'PSE', 0:'PD'}},
+      {k:'pseSup', m:0x02, zh:'支援 PSE 供電', opt:{1:'支援', 0:'不支援'}},
+      {k:'pseEn', m:0x04, zh:'PSE 供電啟用', opt:{1:'啟用', 0:'停用'}},
+      {k:'pairCtl', m:0x08, zh:'可控制供電線對', opt:{1:'可以', 0:'不可以'}},
+      {k:'r4', m:0xF0, zh:'保留', rsv:true}]},
+    {g:'at', zh:'PSE 供電線對', en:'PSE power pair', o:5, n:1, c:C.a, subs:[{k:'pair', m:0xFF, zh:'供電線對', opt:{1:'Signal（Alternative A）', 2:'Spare（Alternative B）', 0:'（PD 填 0）'}}]},
+    {g:'at', zh:'Power class', en:'Power class', o:6, n:1, c:C.a, subs:[{k:'pclass', m:0xFF, zh:'Class 值', opt:{1:'Class 0', 2:'Class 1', 3:'Class 2', 4:'Class 3', 5:'Class 4（含以上）'}}]},
+    {g:'at', zh:'類型／來源／優先權', en:'Type / source / priority', o:7, n:1, c:C.t, subs:[
+      {k:'ptype', m:0xC0, zh:'電源類型 Power type', opt:{0:'Type 2 PSE', 1:'Type 2 PD', 2:'Type 1 PSE', 3:'Type 1 PD'}},
+      {k:'psrc', m:0x30, zh:'電源來源 Power source', opt:null},
+      {k:'r3', m:0x08, zh:'保留', rsv:true},
+      {k:'p4pid', m:0x04, zh:'PD 4PID（支援 4 對）', opt:{1:'支援', 0:'不支援'}},
+      {k:'prio', m:0x03, zh:'優先權 Priority', opt:{0:'Unknown', 1:'Critical', 2:'High', 3:'Low'}}]},
+    {g:'at', zh:'PD 要求功率', en:'PD requested power value', o:8, n:2, c:C.p, subs:[{k:'req', m:0xFFFF, zh:'0.1 W 單位', num:[0, 999]}]},
+    {g:'at', zh:'PSE 分配功率', en:'PSE allocated power value', o:10, n:2, c:C.o, subs:[{k:'alloc', m:0xFFFF, zh:'0.1 W 單位', num:[0, 999]}]},
+    {g:'bt', zh:'PD 要求 Mode A', en:'PD requested power value Mode A', o:12, n:2, c:C.p, subs:[{k:'reqA', m:0xFFFF, zh:'雙特徵用，單一特徵填 0', num:[0, 499]}]},
+    {g:'bt', zh:'PD 要求 Mode B', en:'PD requested power value Mode B', o:14, n:2, c:C.p, subs:[{k:'reqB', m:0xFFFF, zh:'雙特徵用，單一特徵填 0', num:[0, 499]}]},
+    {g:'bt', zh:'PSE 分配 Alt A', en:'PSE allocated power value Alt A', o:16, n:2, c:C.o, subs:[{k:'allocA', m:0xFFFF, zh:'雙特徵 4 對供電用，其他填 0', num:[0, 499]}]},
+    {g:'bt', zh:'PSE 分配 Alt B', en:'PSE allocated power value Alt B', o:18, n:2, c:C.o, subs:[{k:'allocB', m:0xFFFF, zh:'雙特徵 4 對供電用，其他填 0', num:[0, 499]}]},
+    {g:'bt', zh:'供電狀態', en:'Power status', o:20, n:2, c:C.t, subs:[
+      {k:'pseStat', m:0xC000, zh:'PSE 供電狀態', opt:{0:'忽略', 1:'2 對供電', 2:'4 對 · 單一特徵', 3:'4 對 · 雙特徵'}},
+      {k:'pdStat', m:0x3000, zh:'PD 受電狀態', opt:{0:'忽略', 1:'單一特徵 PD', 2:'雙特徵 PD · 2 對', 3:'雙特徵 PD · 4 對'}},
+      {k:'pairsExt', m:0x0C00, zh:'PSE 供電線對', opt:{0:'忽略', 1:'Alternative A', 2:'Alternative B', 3:'兩組'}},
+      {k:'dsA', m:0x0380, zh:'雙特徵 Class（A）', opt:{0:'忽略', 1:'Class 1', 2:'Class 2', 3:'Class 3', 4:'Class 4', 5:'Class 5', 6:'保留', 7:'單一特徵或 2 對 PD'}},
+      {k:'dsB', m:0x0070, zh:'雙特徵 Class（B）', opt:{0:'忽略', 1:'Class 1', 2:'Class 2', 3:'Class 3', 4:'Class 4', 5:'Class 5', 6:'保留', 7:'單一特徵或 2 對 PD'}},
+      {k:'clsExt', m:0x000F, zh:'Power class ext', opt:{0:'忽略', 1:'Class 1', 2:'Class 2', 3:'Class 3', 4:'Class 4', 5:'Class 5', 6:'Class 6', 7:'Class 7', 8:'Class 8', 15:'雙特徵 PD'}}]},
+    {g:'bt', zh:'系統設定', en:'System setup', o:22, n:1, c:C.a, subs:[
+      {k:'r7', m:0xF0, zh:'保留', rsv:true},
+      {k:'typeExt', m:0x0E, zh:'Power type ext', opt:{0:'Type 3 PSE', 1:'Type 4 PSE', 2:'Type 3 單一特徵 PD', 3:'Type 3 雙特徵 PD', 4:'Type 4 單一特徵 PD', 5:'Type 4 雙特徵 PD', 6:'保留', 7:'保留'}},
+      {k:'pdLoad', m:0x01, zh:'雙特徵 PD 兩組負載', opt:{1:'電氣隔離', 0:'未隔離'}}]},
+    {g:'bt', zh:'PSE 最大可用功率', en:'PSE maximum available power value', o:23, n:2, c:C.o, subs:[{k:'maxAvail', m:0xFFFF, zh:'0.1 W，只是提示不是分配', num:[0, 999]}]},
+    {g:'bt', zh:'Autoclass', en:'Autoclass', o:25, n:1, c:C.x, subs:[
+      {k:'r5', m:0xF8, zh:'保留', rsv:true},
+      {k:'acSup', m:0x04, zh:'PSE 支援 Autoclass', opt:{1:'支援', 0:'不支援'}},
+      {k:'acDone', m:0x02, zh:'Autoclass 量測完成', opt:{1:'完成', 0:'未完成'}},
+      {k:'acReq', m:0x01, zh:'PD 要求 Autoclass', opt:{1:'要求', 0:'無'}}]},
+    {g:'bt', zh:'斷電', en:'Power down', o:26, n:3, c:C.w, subs:[
+      {k:'pdReq', m:0xFC0000, zh:'斷電請求碼（0x1D＝請求斷電）', opt:{0:'無', 29:'0x1D 請求斷電'}},
+      {k:'pdTime', m:0x03FFFF, zh:'喚醒時間（秒，0＝不自動喚醒）', num:[0, 262143]}]}
+  ];
+  const ALL = []; FIELDS.forEach(f => f.subs.forEach(s => ALL.push(Object.assign(s, {f}))));
+  const shiftOf = m => { let s = 0; while (!((m >>> s) & 1)) s++; return s; };
+  const T = {fmt:29, sel:7, v:{}};
+  function srcOpt(){ return T.v.ptype & 1 ? {0:'Unknown', 1:'PSE', 2:'本地 Local', 3:'PSE＋本地'} : {0:'Unknown', 1:'主電源 Primary', 2:'備援 Backup', 3:'保留'}; }
+  function setPreset(p){ ALL.forEach(s => { if (!s.fixedV) T.v[s.k] = 0; }); Object.assign(T.v, p.v); T.fmt = p.fmt; }
+  const TLV_PRE = [
+    {l:'Type 4 PSE → Class 8 PD（核准 71.3 W）', fmt:29, v:{portClass:1, pseSup:1, pseEn:1, pairCtl:1, pair:1, pclass:5, ptype:0, psrc:1, prio:3, req:713, alloc:713, pseStat:2, pdStat:1, pairsExt:3, dsA:7, dsB:7, clsExt:8, typeExt:1, maxAvail:713, acSup:1}},
+    {l:'Class 6 PD 要求 43 W', fmt:29, v:{pclass:5, ptype:1, psrc:1, p4pid:1, prio:2, req:430, alloc:510, pdStat:1, dsA:7, dsB:7, clsExt:6, typeExt:2}},
+    {l:'at PD 要求 20 W（12 bytes）', fmt:12, v:{pclass:5, ptype:1, psrc:1, prio:3, req:200, alloc:200}},
+    {l:'雙特徵 PD 各要 30 W', fmt:29, v:{pclass:5, ptype:1, psrc:1, p4pid:1, prio:2, req:0, alloc:0, reqA:300, reqB:300, pdStat:3, dsA:4, dsB:4, clsExt:15, typeExt:5, pdLoad:1}},
+    {l:'PD 請求斷電，1 小時後喚醒', fmt:29, v:{pclass:5, ptype:1, psrc:1, prio:3, req:255, alloc:255, pdStat:1, dsA:7, dsB:7, clsExt:4, typeExt:2, pdReq:29, pdTime:3600}}
+  ];
+  setPreset(TLV_PRE[0]);
+  function encode(){
+    const len = T.fmt, b = new Array(len).fill(0);
+    FIELDS.forEach(f => {
+      if (f.o + f.n > len) return;
+      let word = 0;
+      f.subs.forEach(s => { if (s.fixedV) word = s.fixedV; else if (!s.rsv) word = (word | (((T.v[s.k] || 0) << shiftOf(s.m)) & s.m)) >>> 0; });
+      for (let k = 0; k < f.n; k++) b[f.o + k] = (word >>> (8*(f.n - 1 - k))) & 0xFF;
+    });
+    if (len >= 4) { b[0] = 0x00; b[1] = 0x12; b[2] = 0x0F; b[3] = 0x02; }
+    const hdr = (127 << 9) | len;
+    return [(hdr >> 8) & 0xFF, hdr & 0xFF].concat(b);
+  }
+  function decode(bytes){
+    // accepts with or without the 2-byte header
+    let info = bytes;
+    if (bytes.length >= 2 && (bytes[0] >> 1) === 127) {
+      const len = ((bytes[0] & 1) << 8) | bytes[1];
+      info = bytes.slice(2, 2 + len);
+      if (info.length !== len) return {err:`標頭寫長度 ${len}，實際只有 ${info.length} bytes`};
+    }
+    if (info.length < 4 || info[0] !== 0x00 || info[1] !== 0x12 || info[2] !== 0x0F) return {err:'不是 IEEE 802.3 OUI（00-12-0F）的 TLV'};
+    if (info[3] !== 0x02) return {err:`子類型 ${info[3]} 不是 Power via MDI（2）`};
+    if (![7, 12, 29].includes(info.length)) return {err:`長度 ${info.length} bytes 不是 7／12／29 其中之一`};
+    const v = {};
+    FIELDS.forEach(f => {
+      if (f.o + f.n > info.length) return;
+      let word = 0; for (let k = 0; k < f.n; k++) word = (word * 256) + info[f.o + k];
+      f.subs.forEach(s => { if (!s.fixedV && !s.rsv) v[s.k] = (word & s.m) >>> shiftOf(s.m); });
+    });
+    return {v, len:info.length};
+  }
+  const hex2 = n => n.toString(16).toUpperCase().padStart(2, '0');
+  function tlvRender(){
+    if (T.fmt === 12 && T.sel > 13) T.sel = 7;
+    setSeg('tlvFmt', T.fmt);
+    const bytes = encode();
+    // byte grid
+    const grid = $('tlvBytes'); grid.innerHTML = '';
+    bytes.forEach((x, i) => {
+      const f = i < 2 ? null : FIELDS.find(f => i - 2 >= f.o && i - 2 < f.o + f.n);
+      const el = document.createElement('button'); el.type = 'button'; el.className = 'byte';
+      el.style.setProperty('--c', f ? f.c : C.hdr);
+      el.setAttribute('aria-pressed', String(i === T.sel || (f && T.sel >= 2 && FIELDS.find(g => T.sel - 2 >= g.o && T.sel - 2 < g.o + g.n) === f)));
+      el.innerHTML = `${hex2(x)}<small>${i < 2 ? 'H' + i : '#' + (i - 2)}</small>`;
+      el.title = i < 2 ? 'TLV 標頭' : f.zh;
+      el.addEventListener('click', () => { T.sel = i; tlvRender(); });
+      grid.appendChild(el);
+    });
+    // bit view for the selected field
+    let html;
+    if (T.sel < 2) {
+      const hdr = (bytes[0] << 8) | bytes[1];
+      html = `<h3><span class="tag">TLV 標頭</span>2 bytes · 0x${hex2(bytes[0])}${hex2(bytes[1])}</h3>` + bitBlock(hdr, 16, [{m:0xFE00, zh:'型別 Type = ' + (hdr >> 9) + '（組織自訂 TLV）'}, {m:0x01FF, zh:'長度 Length = ' + (hdr & 0x1FF) + ' bytes'}], 'var(--muted)') +
+        '<p>型別 127 代表「組織自訂 TLV」，內容由 OUI 決定怎麼解讀；長度不含這 2 bytes 標頭本身。</p>';
+    } else {
+      const f = FIELDS.find(g => T.sel - 2 >= g.o && T.sel - 2 < g.o + g.n);
+      let word = 0; for (let k = 0; k < f.n; k++) word = word * 256 + bytes[2 + f.o + k];
+      const head = `<h3><span class="tag">byte ${f.o}${f.n > 1 ? '–' + (f.o + f.n - 1) : ''}</span>${f.zh} <span class="en" style="display:inline">${f.en}</span></h3>`;
+      if (f.subs[0].fixedV) html = head + '<p class="num" style="font-size:15px">00 12 0F · 02</p>' + fieldNote(f);
+      else {
+        const subs = f.subs.map(s => ({m:s.m, zh:s.rsv ? '保留（填 0）' : s.zh + ' = ' + label(s, (word & s.m) >>> shiftOf(s.m))}));
+        html = head + bitBlock(word >>> 0, f.n*8, subs, f.c) + fieldNote(f);
+      }
+    }
+    $('tlvBit').style.setProperty('--c', T.sel < 2 ? 'var(--muted)' : FIELDS.find(g => T.sel - 2 >= g.o && T.sel - 2 < g.o + g.n).c);
+    $('tlvBit').innerHTML = html;
+    // field table
+    let t = '<thead><tr><th>byte</th><th>欄位</th><th>bits</th><th>值</th><th>設定</th><th>意思</th></tr></thead><tbody>';
+    let grp = '';
+    FIELDS.forEach(f => {
+      if (f.o + f.n > T.fmt) return;
+      if (f.g !== grp) { grp = f.g; t += `<tr class="grp"><td colspan="6">${f.g === 'bt' ? '802.3bt 擴充（byte 12–28）' : f.g === 'at' ? '802.3at（byte 4–11；舊版只到 byte 6）' : 'OUI 與子類型（byte 0–3）'}</td></tr>`; }
+      f.subs.forEach((s, j) => {
+        if (s.rsv) return;
+        const sel = T.sel >= 2 && T.sel - 2 >= f.o && T.sel - 2 < f.o + f.n;
+        const bitsTxt = bitRange(s.m, f.n*8);
+        let ctl = '', val = '', mean = '';
+        if (s.fixedV) { val = '00-12-0F · 02'; mean = 'IEEE 802.3 · Power via MDI'; }
+        else if (s.num) { val = T.v[s.k]; ctl = `<input type="number" min="${s.num[0]}" max="${s.num[1]}" value="${T.v[s.k]}" data-k="${s.k}" aria-label="${s.zh}">`; mean = s.k === 'pdTime' ? (T.v[s.k] ? T.v[s.k] + ' 秒' : '不自動喚醒') : W(T.v[s.k]) + (['req', 'alloc'].includes(s.k) && T.v[s.k] ? ' → Class ' + clsOf(T.v[s.k]) : ''); }
+        else { const o = s.k === 'psrc' ? srcOpt() : s.opt; val = T.v[s.k]; ctl = `<select data-k="${s.k}" aria-label="${s.zh}">${Object.keys(o).map(k => `<option value="${k}"${+k === T.v[s.k] ? ' selected' : ''}>${k} · ${o[k]}</option>`).join('')}</select>`; mean = o[T.v[s.k]] || '未定義'; }
+        t += `<tr class="${sel ? 'sel' : ''}"><td class="m">${j === 0 ? f.o + (f.n > 1 ? '–' + (f.o + f.n - 1) : '') : ''}</td><td><span class="sw" style="--c:${f.c}"></span>${j === 0 ? f.zh + '<br>' : ''}<span style="color:var(--muted)">${s.zh}</span></td><td class="m">${bitsTxt}</td><td class="m">${val}</td><td>${ctl}</td><td>${mean}</td></tr>`;
+      });
+    });
+    $('tlvTbl').innerHTML = t + '</tbody>';
+    $('tlvTbl').querySelectorAll('[data-k]').forEach(el => el.addEventListener('change', () => {
+      const s = ALL.find(x => x.k === el.dataset.k); let v = parseInt(el.value, 10) || 0;
+      if (s.num) v = Math.max(s.num[0], Math.min(s.num[1], v));
+      T.v[s.k] = v; tlvRender();
+    }));
+    $('hexIn').value = bytes.map(hex2).join(' ');
+  }
+  function label(s, v){ if (s.num) return s.k === 'pdTime' ? v + ' 秒' : v + '（' + W(v) + '）'; const o = s.k === 'psrc' ? srcOpt() : s.opt; return v + (o && o[v] ? '・' + o[v] : ''); }
+  function bitRange(m, w){ let hi = -1, lo = -1; for (let b = w - 1; b >= 0; b--) if ((m >>> b) & 1) { if (hi < 0) hi = b; lo = b; } return hi === lo ? 'bit ' + hi : 'bit ' + hi + '–' + lo; }
+  function bitBlock(word, w, subs, c){
+    let h = `<div class="scroll-x"><div style="min-width:${w > 8 ? w*26 : 0}px"><div class="bits ${w === 16 ? 'w16' : w >= 24 ? 'w24' : ''}" style="--c:${c}">`;
+    for (let b = w - 1; b >= 0; b--) { const one = Math.floor(word / 2**b) % 2; h += `<div class="bit ${one ? 'one' : ''}">${one}<small>${b}</small></div>`; }
+    h += '</div>';
+    const cols = w === 16 ? 16 : w >= 24 ? 24 : 8;
+    h += `<div class="bitf" style="grid-template-columns:repeat(${cols},minmax(0,1fr))">`;
+    subs.forEach(s => { let hi = -1, lo = -1; for (let b = w - 1; b >= 0; b--) if (Math.floor(s.m / 2**b) % 2) { if (hi < 0) hi = b; lo = b; }
+      h += `<span style="--c:${c};grid-column:${w - hi} / ${w - lo + 1}" title="${s.zh}">${s.zh}</span>`; });
+    return h + '</div></div></div>';
+  }
+  function fieldNote(f){
+    const n = {
+      4:'<p>PSE 送出時通常把 bit 0–2 都設 1（我是 PSE、支援、已啟用）；PD 送出時整個 byte 可以填 0。</p>',
+      5:'<p>只對 PSE 有意義：1 表示用 Signal 線對（Alternative A：1-2／3-6），2 表示 Spare 線對（Alternative B：4-5／7-8）。bt 的 4 對狀態看 byte 20–21。</p>',
+      6:'<p>這裡的值是「Class + 1」：1 代表 Class 0，5 代表 Class 4。這個欄位只到 Class 4，bt 的 Class 5–8 寫在 byte 20–21 的 Power class ext。</p>',
+      7:'<p>bit 7–6 決定這個 TLV 是 PSE 還是 PD 送的，bit 5–4 的意思也跟著變：PSE 端是主電源／備援，PD 端是電從 PSE 來、本地電源或兩者。優先權是 PD 告訴交換器「我有多重要」，交換器可以參考也可以用自己的設定。</p>',
+      8:'<p>單位 0.1 W：例如 430 = 43.0 W。PSE 送出時這裡填它最後收到的 PD 要求值（回傳），讓 PD 確認對方有收到。</p>',
+      10:'<p>單位 0.1 W。PD 送出時這裡填它最後收到的 PSE 分配值（回傳）。只有兩邊的值互相對上，新的分配才生效。</p>',
+      12:'<p>Mode A／B 的要求值只給雙特徵 PD 用（兩組線對各自要功率），單一特徵 PD 填 0。</p>', 14:'<p>同 Mode A，雙特徵 PD 對 Mode B 線對的要求。</p>',
+      16:'<p>PSE 用 4 對供電給雙特徵 PD 時，對 Alternative A 的分配；其他情況填 0。</p>', 18:'<p>同 Alt A，對 Alternative B 的分配。</p>',
+      20:'<p>16 bits 裡塞了 6 個子欄位：PSE 實際用幾對、PD 是單一或雙特徵、哪幾組線對有電、雙特徵各組的 Class，以及 Class 1–8 的完整等級（PSE 送的是核准 Class，PD 送的是要求 Class）。</p>',
+      22:'<p>Power type ext 告訴對方自己是 Type 3 或 Type 4、單一或雙特徵；bit 0 只對雙特徵 PD 有意義，表示兩組線對的負載是否電氣隔離。</p>',
+      23:'<p>PSE 告訴 PD「現在最多可能給到多少」，只是提示。PD 要拿到功率仍要送要求值，看分配值有沒有更新。</p>',
+      25:'<p>PD 可以用 bit 0 請 PSE 重新做 Autoclass 量測；PSE 用 bit 2 表示自己支援、bit 1 表示量測已完成。</p>',
+      26:'<p>PD 不再需要電時，可以請 PSE 斷電，並設定 PSE 在多少秒後重新上電（喚醒）。最高 6 bits 是請求碼，其餘 18 bits 是時間（秒），最長約 72.8 小時。</p>'
+    };
+    return n[f.o] || '<p>OUI 00-12-0F 代表這是 IEEE 802.3 定義的 TLV，子類型 2 代表 Power via MDI。</p>';
+  }
+  segGroup('tlvFmt', v => { T.fmt = +v; tlvRender(); });
+  TLV_PRE.forEach(p => { const b = document.createElement('button'); b.type = 'button'; b.textContent = p.l; b.addEventListener('click', () => { setPreset(p); T.sel = 10; tlvRender(); }); $('tlvPresets').appendChild(b); });
+  $('hexGo').addEventListener('click', () => {
+    const txt = $('hexIn').value.replace(/0x/gi, '').replace(/[^0-9a-fA-F]/g, '');
+    if (txt.length % 2) { $('hexMsg').innerHTML = '<span class="badge warn">hex 字元數必須是偶數</span>'; return; }
+    const bytes = []; for (let i = 0; i < txt.length; i += 2) bytes.push(parseInt(txt.substr(i, 2), 16));
+    const r = decode(bytes);
+    if (r.err) { $('hexMsg').innerHTML = `<span class="badge warn">${r.err}</span>`; return; }
+    if (r.len === 7) { $('hexMsg').innerHTML = '<span class="badge info">舊版 7 bytes：只有 MDI 支援、線對、Class，沒有功率欄位</span>'; }
+    ALL.forEach(s => { if (!s.fixedV) T.v[s.k] = r.v[s.k] || 0; });
+    T.fmt = r.len === 7 ? 12 : r.len; T.sel = 10; tlvRender();
+    if (r.len !== 7) $('hexMsg').innerHTML = `<span class="badge ok">解碼成功：${r.len} bytes，PD 要求 ${W(T.v.req)}、PSE 分配 ${W(T.v.alloc)}</span>`;
+  });
+  tlvRender();
+
+  /* ================= sequence scenarios ================= */
+  // step: {d:'pd'|'pse'|'note', req, alloc, max, txt, state:{pdMax, load}}
+  const SC = {
+    trim:{zh:'細調：51 → 43 W', cls:6, steps:[
+      {d:'note', txt:'實體層分級完成：PD 要 Class 6、PSE 給 4 次事件，核准 Class 6。雙方的初始值都是 51.0 W（510）。', pdMax:510, load:'約 38 W'},
+      {d:'pse', req:510, alloc:510, max:900, txt:'PSE 先送：分配值 510（51.0 W），要求值欄位還沒收到 PD 的值，填初始值 510。'},
+      {d:'pd', req:430, alloc:510, txt:'PD 送出要求 430（43.0 W），分配值欄位回傳剛剛收到的 510。PD 負載本來就低於 43 W，所以不需要先降載。'},
+      {d:'pse', req:430, alloc:430, max:900, txt:'PSE 在 10 秒內回覆：要求值回傳 430（我收到了），分配值改成 430。交換器的預算釋出約 9 W（PSE 端）。'},
+      {d:'note', txt:'PD 看到回傳的要求值 = 自己送的 430，分配值也是 430：同步完成，PDMaxPowerValue = 430。430 落在 401–510，核准 Class 仍是 6。', pdMax:430, load:'約 38 W', ok:true}
+    ]},
+    recover:{zh:'降級後要回 71.3 W', cls:8, steps:[
+      {d:'note', txt:'PSE 當時只剩 30 W 預算，只給 2 次事件：Class 8 的 PD 被降級到 Class 4（25.5 W），先關掉加熱器運作。', pdMax:255, load:'約 20 W（加熱器關）'},
+      {d:'pse', req:255, alloc:255, max:300, txt:'PSE 送出：分配 255（25.5 W），最大可用功率 300（30.0 W），提示 PD 現在要太多不會成功。'},
+      {d:'pd', req:713, alloc:255, txt:'PD 仍送出它真正需要的 713（71.3 W），分配值回傳 255。'},
+      {d:'pse', req:713, alloc:255, max:300, txt:'PSE 回傳要求值 713（收到了），但分配值維持 255：預算不夠，暫時給不了。PD 維持 25.5 W 運作。', warn:true},
+      {d:'note', txt:'過了一陣子，交換器上有其他設備拔掉，預算釋出。', pdMax:255, load:'約 20 W'},
+      {d:'pse', req:713, alloc:713, max:713, txt:'PSE 主動送出新的 TLV：分配值改為 713。'},
+      {d:'note', txt:'PD 收到分配 713 = 自己的要求：PDMaxPowerValue = 713，核准 Class 從 4 變成 8（621–999）。現在才能打開加熱器。', pdMax:713, load:'最多 68 W（加熱器開）', ok:true}
+    ]},
+    up:{zh:'夜間增加功率', cls:4, steps:[
+      {d:'note', txt:'Class 4 攝影機白天協商在 15.0 W（150），實際用 12 W。天黑了要開 IR 補光，需要 22 W。', pdMax:150, load:'約 12 W'},
+      {d:'pd', req:220, alloc:150, txt:'PD 送出要求 220（22.0 W），分配值回傳 150。'},
+      {d:'note', txt:'這時候 IR 還不能開：分配還是 15 W，先加負載會超過目前的分配，可能被 PSE 斷電。', pdMax:150, load:'約 12 W', warn:true},
+      {d:'pse', req:220, alloc:220, max:600, txt:'PSE 回覆：要求值回傳 220、分配值改為 220。'},
+      {d:'note', txt:'PD 確認分配已更新：PDMaxPowerValue = 220，打開 IR。順序是「先要、確認、再加負載」。', pdMax:220, load:'約 20 W（IR 開）', ok:true}
+    ]},
+    down:{zh:'白天降低功率', cls:4, steps:[
+      {d:'note', txt:'天亮了，攝影機不需要 IR，打算把分配從 22 W 降回 15 W。', pdMax:220, load:'約 20 W（IR 開）'},
+      {d:'note', txt:'PD 先關掉 IR，把負載降到 15 W 以下。順序是「先降負載、再送要求」。', pdMax:220, load:'約 12 W'},
+      {d:'pd', req:150, alloc:220, txt:'PD 送出要求 150（15.0 W），分配值回傳 220。'},
+      {d:'pse', req:150, alloc:150, max:600, txt:'PSE 回覆分配 150，交換器預算多出約 8 W 可以給其他埠。'},
+      {d:'note', txt:'同步完成：PDMaxPowerValue = 150。', pdMax:150, load:'約 12 W', ok:true}
+    ]},
+    none:{zh:'PSE 沒有回應 LLDP', cls:4, steps:[
+      {d:'note', txt:'802.3at 的 Class 4 PD 上電。舊式 at 流程：先把負載限制在 13 W 以下，等 PSE 的 LLDP。', pdMax:130, load:'< 13 W'},
+      {d:'pd', req:255, alloc:255, txt:'PD 第一次送 TLV：要求值與分配值都填想要的 255（25.5 W）。'},
+      {d:'note', txt:'過了 10 秒還沒收到 PSE 的 LLDP（交換器關掉了 LLDP，或只送 LLDP-MED）。', pdMax:130, load:'< 13 W', warn:true},
+      {d:'note', txt:'PD 查看實體層：有收到 2 次分級事件，代表對方是 Type 2 PSE，已經保證 25.5 W，可以解除限制。若只有 1 次事件，就只能維持 13 W。', pdMax:255, load:'最多 25.5 W', ok:true}
+    ]},
+    over:{zh:'要求超過實體層上限', cls:4, steps:[
+      {d:'note', txt:'PD 用 RCLS 電阻設定成 Class 4（25.5 W），但韌體想用 LLDP 要 30 W。', pdMax:255, load:'約 24 W'},
+      {d:'pd', req:300, alloc:255, txt:'PD 送出要求 300（30.0 W）。'},
+      {d:'pse', req:300, alloc:255, max:255, txt:'PSE 回傳收到 300，但分配維持 255：規範不允許 PD 用 LLDP 要比實體層分級更多的功率。', warn:true},
+      {d:'note', txt:'要更多功率只能改硬體分級（改 RCLS 成 Class 5 以上，並使用 bt PD 控制器），LLDP 只能在實體層等級以內調整。', pdMax:255, load:'約 24 W', warn:true}
+    ]}
+  };
+  const SQ = {scn:'trim', k:1, all:false};
+  $('seqScn').innerHTML = Object.keys(SC).map(k => `<button type="button" data-v="${k}">${SC[k].zh}</button>`).join('');
+  segGroup('seqScn', v => { SQ.scn = v; SQ.k = 1; SQ.all = false; seqRender(); });
+  $('seqPrev').addEventListener('click', () => { SQ.all = false; SQ.k = Math.max(1, SQ.k - 1); seqRender(); });
+  $('seqNext').addEventListener('click', () => { SQ.all = false; SQ.k = Math.min(SC[SQ.scn].steps.length, SQ.k + 1); seqRender(); });
+  $('seqAll').addEventListener('click', () => { SQ.all = true; SQ.k = SC[SQ.scn].steps.length; seqRender(); });
+  function seqRender(){
+    setSeg('seqScn', SQ.scn);
+    const sc = SC[SQ.scn], st = sc.steps, n = SQ.k;
+    $('seqPos').textContent = `第 ${n} ／ ${st.length} 步`;
+    const s = $('seqSvg'); while (s.firstChild) s.removeChild(s.firstChild);
+    const xL = 90, xR = 470, top = 54, dy = 58;
+    [[xL, 'PD'], [xR, 'PSE（Switch）']].forEach(([x, t]) => {
+      svgEl('rect', {x:x - 70, y:8, width:140, height:32, rx:8, class:'blk', fill:'var(--paper-2)', stroke:'var(--wire)'}, s);
+      svgEl('text', {x, y:29, 'text-anchor':'middle', class:'lbl'}, s, t);
+      svgEl('line', {x1:x, y1:40, x2:x, y2:470, class:'lane'}, s);
+    });
+    svgEl('defs', {}, s).innerHTML = '<marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--ink)"/></marker>';
+    st.slice(0, n).forEach((p, i) => {
+      const y = top + i*dy + 18, cur = i === n - 1;
+      const op = cur ? 1 : 0.55;
+      if (p.d === 'note') {
+        svgEl('rect', {x:xL - 40, y:y - 17, width:xR - xL + 80, height:30, rx:6, class:'seq-note', opacity:op, stroke:p.ok ? 'var(--ok)' : p.warn ? 'var(--warn)' : 'var(--line)', 'stroke-width':cur ? 2 : 1}, s);
+        const short = p.txt.length > 30 ? p.txt.slice(0, 30) + '…' : p.txt;
+        svgEl('text', {x:(xL + xR)/2, y:y + 3, 'text-anchor':'middle', class:'lbl-sm', opacity:op}, s, short);
+      } else {
+        const fromPd = p.d === 'pd', x1 = fromPd ? xL : xR, x2 = fromPd ? xR : xL;
+        svgEl('line', {x1, y1:y, x2, y2:y, stroke:p.warn ? 'var(--warn)' : fromPd ? 'var(--on)' : 'var(--ok)', 'stroke-width':cur ? 3 : 2, 'marker-end':'url(#ah)', opacity:op}, s);
+        svgEl('text', {x:(xL + xR)/2, y:y - 8, 'text-anchor':'middle', class:'seq-msg', fill:'var(--ink)', opacity:op}, s, `要求 ${W(p.req)} · 分配 ${W(p.alloc)}`);
+        svgEl('text', {x:(xL + xR)/2, y:y + 16, 'text-anchor':'middle', class:'tick', opacity:op}, s, fromPd ? 'LLDPDU：PD → PSE' : 'LLDPDU：PSE → PD' + (p.max ? ' · 最大可用 ' + W(p.max) : ''));
+      }
+    });
+    const p = st[n - 1];
+    // running state
+    let pdMax = st[0].pdMax, load = st[0].load;
+    st.slice(0, n).forEach(x => { if (x.pdMax != null) pdMax = x.pdMax; if (x.load) load = x.load; });
+    const lastPse = st.slice(0, n).filter(x => x.d === 'pse').pop(), lastPd = st.slice(0, n).filter(x => x.d === 'pd').pop();
+    $('seqInfo').style.setProperty('--c', p.ok ? 'var(--ok)' : p.warn ? 'var(--warn)' : p.d === 'pd' ? 'var(--on)' : 'var(--accent)');
+    $('seqInfo').innerHTML = `<h3><span class="tag">${p.d === 'note' ? '狀態' : p.d === 'pd' ? 'PD → PSE' : 'PSE → PD'}</span>第 ${n} 步</h3><p>${p.txt}</p>`;
+    $('seqKv').innerHTML = [
+      ['PD 最後送出的要求', lastPd ? W(lastPd.req) : '—'], ['PSE 最後送出的分配', lastPse ? W(lastPse.alloc) : '—'],
+      ['PDMaxPowerValue', W(pdMax)], ['對應核准 Class', 'Class ' + clsOf(pdMax)], ['PD 負載', load], ['實體層要求', 'Class ' + sc.cls]
+    ].map(([k, v]) => `<div>${k}<b>${v}</b></div>`).join('');
+    const box = $('seqLoad'); box.innerHTML = '';
+    if (p.d !== 'note') {
+      const b = document.createElement('button'); b.type = 'button'; b.textContent = '把這個封包載入下方 TLV 解碼器 ↓';
+      b.addEventListener('click', () => {
+        const fromPd = p.d === 'pd';
+        setPreset({fmt:29, v:fromPd ? {pclass:5, ptype:1, psrc:1, p4pid:sc.cls >= 5 ? 1 : 0, prio:2, req:p.req, alloc:p.alloc, pdStat:1, dsA:7, dsB:7, clsExt:sc.cls, typeExt:sc.cls >= 7 ? 4 : 2}
+          : {portClass:1, pseSup:1, pseEn:1, pairCtl:1, pair:1, pclass:5, ptype:0, psrc:1, prio:2, req:p.req, alloc:p.alloc, pseStat:sc.cls >= 5 ? 2 : 1, pdStat:1, pairsExt:sc.cls >= 5 ? 3 : 1, dsA:7, dsB:7, clsExt:clsOf(p.alloc), typeExt:1, maxAvail:p.max || 0, acSup:1}});
+        T.sel = 10; tlvRender(); $('h-tlv').scrollIntoView({behavior:REDUCED ? 'auto' : 'smooth'});
+      });
+      box.appendChild(b);
+    }
+  }
+  seqRender();
+
+  /* ================= value → class map ================= */
+  const MV = {v:430};
+  sliders([{k:'v', zh:'協商後的功率值', en:'PSEAllocatedPowerValue / PDMaxPowerValue', min:1, max:999, step:1, fmt:v => v + '（' + W(v) + '）'}], MV, $('mapParams'), mapRender);
+  function mapRender(){
+    const R = [[1, 39], [40, 65], [66, 130], [131, 255], [256, 400], [401, 510], [511, 620], [621, 999]], c = clsOf(MV.v);
+    $('clsMap').innerHTML = R.map(([a, b], i) => `<div class="${i + 1 === c ? 'on' : ''}"><b>Class ${i + 1}</b>${a}–${b}<br><span style="color:var(--muted)">${W(a)}–${W(b)}</span></div>`).join('');
+  }
+  mapRender();
+})();

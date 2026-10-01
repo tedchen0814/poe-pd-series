@@ -17,6 +17,8 @@ SERIES = [  # (key, number, nav name, zh, single-file stem, site file)
     ("handshake", "02", "HANDSHAKE", "握手狀態機", "02-HANDSHAKE", "handshake.html"),
     ("budget", "03", "POWER BUDGET", "功率預算", "03-BUDGET", "power-budget.html"),
     ("topology", "04", "DC-DC", "拓撲選擇", "04-TOPOLOGY", "dcdc-topology.html"),
+    ("pse", "05", "PSE", "供電端與預算", "05-PSE", "pse-switch.html"),
+    ("lldp", "06", "LLDP", "功率協商", "06-LLDP", "lldp.html"),
 ]
 
 

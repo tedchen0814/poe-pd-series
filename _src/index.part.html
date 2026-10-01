@@ -5,10 +5,10 @@ PoE PD 互動教學
 <!--#H1_EN-->
 Power over Ethernet · powered device, from RJ45 to DC-DC
 <!--#CHIP-->
-4 <span>×</span> TOPICS
+6 <span>×</span> TOPICS
 <!--#LEDE-->
-<p class="lede">PoE PD（受電端設備）由兩段組成：前段的 <b>PD 介面</b>負責和 PSE 握手、安全地把電接進來；後段的 <b>DC-DC</b> 把 37–57 V 轉成板上電壓。四個互動頁分別說明架構、握手狀態機、功率預算，以及 DC-DC 拓撲的選擇，並整理 Layout、選料與除錯的注意事項。
-  <span class="en">A PoE powered device has two stages: the PD interface that handshakes with the PSE and brings power in safely, and a DC-DC converter that makes the board rails. Four interactive pages cover the architecture, the handshake, the power budget and the DC-DC topology choice.</span></p>
+<p class="lede">PoE PD（受電端設備）由兩段組成：前段的 <b>PD 介面</b>負責和 PSE 握手、安全地把電接進來；後段的 <b>DC-DC</b> 把 37–57 V 轉成板上電壓。前四個互動頁分別說明架構、握手狀態機、功率預算，以及 DC-DC 拓撲的選擇；後兩頁換到供電端，看 PSE（Power Sourcing Equipment，供電設備）怎麼偵測、限流、分配交換器的總預算，以及上電後怎麼用 LLDP（Link Layer Discovery Protocol）協商功率。
+  <span class="en">A PoE powered device has two stages: the PD interface that handshakes with the PSE and brings power in safely, and a DC-DC converter that makes the board rails. Four pages cover the PD side; two more cover the PSE side and LLDP power negotiation.</span></p>
 <!--#STYLE-->
 .flow-line{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-weight:700;font-size:14px}
 .flow-line span{border:1.5px solid var(--line);border-radius:8px;padding:4px 10px;background:var(--paper-2)}
@@ -50,6 +50,20 @@ Power over Ethernet · powered device, from RJ45 to DC-DC
       <ul><li>何時可以不隔離</li><li>Flyback 與主動箝位 Forward 的差別</li></ul>
       <span class="go">開啟 Open →</span>
     </a>
+    <a class="card" href="pse-switch.html" style="--c:var(--ok)">
+      <span class="no">05 · PSE</span>
+      <h2>供電端與預算<small>Detection · Inrush · Current limit · Budget</small></h2>
+      <p>站在 PSE 端看兩點偵測、分級事件怎麼決定、湧浪與過流範本、MPS 判斷，再用 <b>24 埠、370 W</b> 交換器模擬器比較四種分配模式。</p>
+      <ul><li>依 Class／LLDP／用量／Autoclass</li><li>優先權與卸載</li></ul>
+      <span class="go">開啟 Open →</span>
+    </a>
+    <a class="card" href="lldp.html" style="--c:var(--warn)">
+      <span class="no">06 · LLDP</span>
+      <h2>功率協商<small>Power via MDI TLV, bit by bit</small></h2>
+      <p>六種協商情境一步一步看 PD 與 PSE 怎麼互相<b>回傳</b>數值，再把 29 bytes 的 Power via MDI TLV 拆到每個 bit，可貼 hex 解碼。</p>
+      <ul><li>細調、降級後要回、增減順序</li><li>LLDP-MED 與交換器設定</li></ul>
+      <span class="go">開啟 Open →</span>
+    </a>
   </div>
 
   <section class="panel" aria-labelledby="h-dbg">
@@ -63,6 +77,8 @@ Power over Ethernet · powered device, from RJ45 to DC-DC
           <tr><td>只拿到 13 W／25.5 W</td><td>PSE 能力不足造成功率降級，或 Class 電阻設錯</td><td><a href="handshake.html">02 握手</a></td></tr>
           <tr><td>待機後斷電</td><td>待機電流低於 MPS 門檻且沒有 MPS 脈衝</td><td><a href="handshake.html">02 握手</a></td></tr>
           <tr><td>滿載或長線時斷電</td><td>線損太大、V<sub>port</sub> 過低，或負載超過核准功率</td><td><a href="power-budget.html">03 功率預算</a></td></tr>
+          <tr><td>LLDP 要了功率卻沒變</td><td>交換器關掉 LLDP 或只送 LLDP-MED；PSE 預算不足維持原分配；或要求超過實體層 Class</td><td><a href="lldp.html">06 LLDP</a></td></tr>
+          <tr><td>交換器上某幾埠會突然斷電</td><td>依用量分配時多台設備同時尖峰，交換器卸載低優先權埠</td><td><a href="pse-switch.html">05 PSE</a></td></tr>
           <tr><td>整流橋很燙</td><td>高功率仍用蕭特基整流，損耗約 2·V<sub>F</sub>·I</td><td><a href="architecture.html">01 架構</a></td></tr>
         </tbody>
       </table>
@@ -76,6 +92,7 @@ Power over Ethernet · powered device, from RJ45 to DC-DC
       <li>「02 握手狀態機」按播放或「下一段」，對照波形、狀態機與說明卡；切換故障情境看失敗時的樣子。<span class="en">Step through the handshake and try the fault scenarios.</span></li>
       <li>「03 功率預算」選範例或自己調參數，看每一段損耗與規範檢查。<span class="en">Load a preset in the budget page and watch each loss.</span></li>
       <li>「04 拓撲選擇」決定 DC-DC，再到 <a href="https://dcdc-topology-series.vercel.app/" target="_blank" rel="noopener">DC-DC 拓撲系列</a>看 Flyback、ACF、Buck 的電路動畫。<span class="en">Pick a DC-DC topology, then open its animation in the DC-DC series.</span></li>
+      <li>「05 供電端與預算」從交換器的角度複習一次握手，並試試不同分配模式；「06 功率協商」看上電後的 LLDP 來回與 TLV 每個 bit。<span class="en">Then switch sides: the PSE page and the LLDP page.</span></li>
     </ol>
   </section>
 <!--#FOOTER-->
