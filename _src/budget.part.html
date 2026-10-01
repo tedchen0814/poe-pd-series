@@ -7,12 +7,17 @@ Power budget · PSE → cable → bridge → hot-swap → DC-DC → load
 <!--#CHIP-->
 90 W <span>→</span> 71.3 W
 <!--#LEDE-->
-<p class="lede">為什麼 bt Class 8 的 PSE 送出 90 W，PD 卻只能用 71.3 W？因為 100 m 網路線的電阻會吃掉 I²R。這一頁把整條電源鏈攤開：PSE 輸出 → <b>線損</b> → PD 端 → <b>整流橋</b> → <b>hot-swap MOSFET</b> → <b>DC-DC</b> → 負載，每一段的損耗都即時算給你看，並檢查是否超過 Class 功率、電流與 V<sub>port</sub> 下限。
+<p class="lede">為什麼 bt Class 8 的 PSE（Power Sourcing Equipment，供電設備）送出 90 W，PD（Powered Device，受電設備）卻只能用 71.3 W？因為 100 m 網路線的電阻會吃掉 I²R。這一頁把整條電源鏈攤開：PSE 輸出 → <b>線損</b> → PD 端 → <b>整流橋</b> → <b>hot-swap MOSFET</b> → <b>DC-DC</b> → 負載，每一段的損耗都即時算給你看，並檢查是否超過 Class 功率、電流與 V<sub>port</sub> 下限。
   <span class="en">Why does a 90 W Class 8 PSE leave only 71.3 W at the PD? The cable eats I²R. This page walks the whole chain — PSE, cable, bridge, hot-swap switch, DC-DC, load — and checks class power, cable current and minimum port voltage.</span></p>
 <!--#STYLE-->
 .opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px 22px;margin-bottom:14px}
 .opts .ctl{flex-wrap:wrap}
 <!--#BODY-->
+  <section class="panel" aria-labelledby="h-gloss">
+    <h2 id="h-gloss"><span class="step">A–Z</span>縮寫對照 <span class="en">Abbreviations used on this page</span></h2>
+    <details class="glossbox"><summary>展開／收合 Show / hide</summary><div id="gloss"></div></details>
+  </section>
+
   <div class="grid-2">
     <section class="panel" aria-labelledby="h-param">
       <h2 id="h-param"><span class="step">1</span>設定 <span class="en">Inputs</span></h2>
@@ -103,6 +108,7 @@ Power budget · PSE → cable → bridge → hot-swap → DC-DC → load
 計算模型：線材以固定迴路電阻計算（2 對為單組線對迴路電阻，4 對為兩組並聯）；蕭特基整流在電流路徑上有兩顆二極體，損耗 2·V<sub>F</sub>·I；主動整流每組兩顆 MOSFET 導通，2 對時損耗 2·R<sub>FET</sub>·I²，4 對時兩組分流為 R<sub>FET</sub>·I²；hot-swap 損耗 R<sub>HS</sub>·I²；DC-DC 以固定效率計算。規範數值依 IEEE 802.3 Clause 33／145（每組線對電流上限：Type 1 為 0.35 A、Type 2／3 為 0.6 A、Type 4 為 0.96 A，後者已含線對間電流不平衡的容許量；兩組平均分流時 Type 4 實際每組約 90 W ÷ 52 V ÷ 2 ≈ 0.87 A。分級事件與降級規則、各 Type 電壓範圍已對照 <a href="https://ethernetalliance.org/wp-content/uploads/2019/12/WP_EA_Overview8023bt_V2p1_FINAL.pdf" target="_blank" rel="noopener">Ethernet Alliance 802.3bt 白皮書 v2.1</a>）；V<sub>port</sub> 下限依核准 Class 判斷：Class 0–3 為 37 V、Class 4 為 42.5 V、Class 5 為 44.4 V、Class 6 為 42.5 V、Class 7 為 42.9 V、Class 8 為 41.1 V，即 PSE 最低電壓經最壞線材（2 對 12.5 Ω、4 對 6.25 Ω，af 為 20 Ω）在滿載 Class 功率下剩下的電壓（白皮書 Table 16 的 Class 7／8 兩列錯位一格，以 Clause 145 的 42.9／41.1 V 為準）；線材電阻以 24 AWG 約 84 Ω／km、23 AWG 約 67 Ω／km（20 °C）估算。實際設計請以規範與晶片規格書為準。
 <br>Model: fixed loop resistance, two conducting diodes (2·VF·I) or FETs, hot-swap I²R and a fixed DC-DC efficiency. Always verify against the standard and datasheets.
 <!--#SCRIPT-->
+glossary($('gloss'), ["PoE", "PSE", "PD", "I²R", "AWG", "Cat3／Cat5e／Cat6", "CCA", "MOSFET", "FET", "HS", "R<sub>DS(on)</sub>", "V<sub>F</sub>", "DC-DC", "LLDP", "Autoclass", "TPL／TPH", "T2P", "IEEE"]);
 (function(){
   const RHO = {ieee:12.5, cat3:20, c5e:8.4, c6:6.7, cca:13.2};
   const P = {cls:4, cable:'ieee', pairs:2, bridge:'sch', vpse:50, len:100, vf:0.5, rf:50, rhs:0.3, eta:90, load:20, vout:12};

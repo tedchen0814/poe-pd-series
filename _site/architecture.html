@@ -27,9 +27,13 @@
 <h1>PoE PD 架構總覽<small>Powered device architecture · RJ45 → bridge → PD controller → DC-DC</small></h1>
 </div>
 <div class="chip-dc">37–57 V <span>→</span> 12 / 5 / 3.3 V</div>
-<p class="lede">PoE PD（受電端設備）不是單一顆電源 IC，而是<b>兩段式架構</b>：前段是和 PSE 握手、把電安全接進來的 <b>PD 介面</b>（中心抽頭 → 整流橋 → TVS → PD 控制器與 hot-swap 開關），後段是把 37–57 V 降成板上電壓的 <b>DC-DC 轉換器</b>。下方電路可切換供電線對與極性，看電流實際走哪兩顆二極體。
+<p class="lede">PoE（Power over Ethernet）PD（Powered Device，受電端設備）不是單一顆電源 IC，而是<b>兩段式架構</b>：前段是和 PSE（Power Sourcing Equipment，供電設備）握手、把電安全接進來的 <b>PD 介面</b>（中心抽頭 → 整流橋 → TVS（Transient Voltage Suppressor）→ PD 控制器與 hot-swap 開關），後段是把 37–57 V 降成板上電壓的 <b>DC-DC 轉換器</b>。下方電路可切換供電線對與極性，看電流實際走哪兩顆二極體。
 <span class="en">A PoE powered device is a two-stage system: a PD interface front end (center taps, polarity bridge, TVS, PD controller with hot-swap switch) followed by a DC-DC converter that turns 37–57 V into board rails. Switch the pair set and polarity to see which diodes conduct.</span></p>
 </header>
+<section class="panel" aria-labelledby="h-gloss">
+<h2 id="h-gloss"><span class="step">A–Z</span>縮寫對照 <span class="en">Abbreviations used on this page</span></h2>
+<details class="glossbox"><summary>展開／收合 Show / hide</summary><div id="gloss"></div></details>
+</section>
 <section class="panel" aria-labelledby="h-chain">
 <h2 id="h-chain"><span class="step">1</span>電源鏈與電流路徑 <span class="en">Power chain &amp; current path</span></h2>
 <div class="ctl-row">
@@ -140,6 +144,7 @@
 </div>
 <script src="assets/common.js"></script>
 <script>
+glossary($('gloss'), ["PoE", "PSE", "PD", "DC-DC", "ALT A／B", "RJ45", "PHY", "TVS", "PG", "UVLO", "EN", "VDD／VSS", "RTN", "APD", "ORing", "MOSFET", "R<sub>DS(on)</sub>", "MPS", "EMI", "PCB", "IC", "TPL／TPH", "T2P", "IEEE"]);
 (function(){
 const P = {mode:'A', pa:'1', pb:'1', ppd:25.5, vport:50, vf:0.5, rf:50};
 const S = $('gStatic'), FL = $('gFlow');

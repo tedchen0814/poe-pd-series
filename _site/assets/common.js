@@ -29,6 +29,55 @@ function sync(){ defs.forEach(d => { $('p_' + d.k).value = P[d.k]; $('o_' + d.k)
 sync();
 return sync;
 }
+/* glossary of abbreviations: key -> [full English name, 中文說明] */
+const GLOSS = {
+"PoE":["Power over Ethernet", "乙太網路供電"],
+"PSE":["Power Sourcing Equipment", "供電設備，通常是 PoE Switch 或中跨供電器（Midspan injector）"],
+"PD":["Powered Device", "受電設備，例如 AP、IP Cam、話機"],
+"MPS":["Maintain Power Signature", "維持供電特徵：PD 上電後必須持續吸取的最小電流，PSE 靠它判斷 PD 還接著"],
+"LLDP":["Link Layer Discovery Protocol", "鏈結層探索協定：PD 上電後用它跟 PSE 重新協商功率（見 06 頁）"],
+"Autoclass":["Autoclass", "bt 選用功能：PD 上電後刻意吃滿功率，讓 PSE 實測後只保留實際需要的功率"],
+"DC-DC":["DC-to-DC Converter", "直流轉直流轉換器：把 37–57 V 轉成板上電壓"],
+"IEEE":["Institute of Electrical and Electronics Engineers", "電機電子工程師學會，制定 802.3 乙太網路與 PoE 規範"],
+"ALT A／B":["Alternative A / Alternative B", "PSE 端兩組供電線對：A 是 1-2／3-6（訊號線對），B 是 4-5／7-8（備用線對）"],
+"RJ45":["Registered Jack 45", "8 針網路接頭"],
+"PHY":["Physical Layer Transceiver", "乙太網路實體層晶片，經由變壓器接到線對"],
+"TVS":["Transient Voltage Suppressor", "暫態電壓抑制二極體，吸收突波與 ESD"],
+"PG":["Power Good", "電源就緒訊號：PD 控制器確認湧浪完成後才拉起，用來啟動 DC-DC"],
+"UVLO":["Under-Voltage Lockout", "欠壓鎖定：電壓低於門檻時不讓電路啟動或強制關閉"],
+"EN":["Enable", "致能腳位，控制轉換器開啟或關閉"],
+"VDD／VSS":["Positive / Negative Supply Pin", "PD 控制器的正、負電源輸入腳位"],
+"RTN":["Return", "PD 控制器 hot-swap 開關之後的負端回路，DC-DC 的地接在這裡"],
+"HS":["Hot-Swap (switch)", "熱插拔開關：PD 控制器內的 MOSFET，負責湧浪限流與上電"],
+"RCLS":["Classification Resistor", "分級電阻：設定 PD 在分級事件時吸取的電流，也就是要求的 Class"],
+"DEN":["Detection and Enable", "TI PD 控制器的偵測腳位：接 24.9 kΩ 偵測電阻，拉低可關閉 PD 介面"],
+"TPL／TPH":["Allocated Power Indicator (Low / High)", "TI bt PD 控制器的輸出腳位，以高低組合回報 PSE 核准的功率等級"],
+"T2P":["Type 2 PSE Indicator", "TI at PD 控制器的輸出腳位，表示偵測到 2 次分級事件（對方是 Type 2 PSE）"],
+"APD":["Auxiliary Power Detect", "外接電源偵測腳位：偵測到牆插變壓器時讓外接電源優先"],
+"ORing":["OR-ing (Diode OR)", "用二極體或 MOSFET 讓兩個電源擇一供電的電路"],
+"MOSFET":["Metal-Oxide-Semiconductor Field-Effect Transistor", "金氧半場效電晶體，當開關或同步整流用"],
+"FET":["Field-Effect Transistor", "場效電晶體"],
+"R<sub>DS(on)</sub>":["Drain-Source On-Resistance", "MOSFET 導通時汲極與源極之間的電阻，決定 I²R 損耗"],
+"V<sub>F</sub>":["Forward Voltage", "二極體順向壓降"],
+"I²R":["Current² × Resistance", "電流平方乘電阻：線材或元件的導通損耗"],
+"AWG":["American Wire Gauge", "美國線規：數字越大線越細，24 AWG 約 84 Ω／km"],
+"Cat3／Cat5e／Cat6":["Category 3 / 5e / 6 Cable", "網路線等級，等級越高頻寬越大、通常線徑也越粗"],
+"CCA":["Copper-Clad Aluminum", "銅包鋁線，電阻約純銅 1.5 倍以上，不符合 Cat 規格"],
+"EMI":["Electromagnetic Interference", "電磁干擾"],
+"PCB":["Printed Circuit Board", "印刷電路板"],
+"IC":["Integrated Circuit", "積體電路"],
+"RCD":["Resistor-Capacitor-Diode Clamp", "電阻－電容－二極體箝位電路，吸收 Flyback 漏感突波"],
+"SR":["Synchronous Rectification", "同步整流：用 MOSFET 取代整流二極體降低損耗"],
+"PSR":["Primary-Side Regulation", "初級側調節：從初級繞組回授，不用光耦"],
+"ACF":["Active Clamp Forward", "主動箝位順向式轉換器"],
+"AP":["Access Point", "無線基地台"],
+"PTZ":["Pan-Tilt-Zoom", "可轉動、可變焦的攝影機"],
+"USB":["Universal Serial Bus", "通用序列匯流排"]
+};
+function glossary(box, keys){
+box.innerHTML = '<div class="scroll-x"><table class="gloss"><thead><tr><th>縮寫</th><th>完整英文名稱</th><th>中文意思與說明</th></tr></thead><tbody>' +
+keys.map(k => `<tr><td>${k}</td><td>${GLOSS[k][0]}</td><td>${GLOSS[k][1]}</td></tr>`).join('') + '</tbody></table></div>';
+}
 /* IEEE 802.3af/at/bt power classes: PSE output power, PD input power, PD type, class signature per event */
 const POE = {
 classes: [

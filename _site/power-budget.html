@@ -22,9 +22,13 @@
 <h1>PoE 功率預算<small>Power budget · PSE → cable → bridge → hot-swap → DC-DC → load</small></h1>
 </div>
 <div class="chip-dc">90 W <span>→</span> 71.3 W</div>
-<p class="lede">為什麼 bt Class 8 的 PSE 送出 90 W，PD 卻只能用 71.3 W？因為 100 m 網路線的電阻會吃掉 I²R。這一頁把整條電源鏈攤開：PSE 輸出 → <b>線損</b> → PD 端 → <b>整流橋</b> → <b>hot-swap MOSFET</b> → <b>DC-DC</b> → 負載，每一段的損耗都即時算給你看，並檢查是否超過 Class 功率、電流與 V<sub>port</sub> 下限。
+<p class="lede">為什麼 bt Class 8 的 PSE（Power Sourcing Equipment，供電設備）送出 90 W，PD（Powered Device，受電設備）卻只能用 71.3 W？因為 100 m 網路線的電阻會吃掉 I²R。這一頁把整條電源鏈攤開：PSE 輸出 → <b>線損</b> → PD 端 → <b>整流橋</b> → <b>hot-swap MOSFET</b> → <b>DC-DC</b> → 負載，每一段的損耗都即時算給你看，並檢查是否超過 Class 功率、電流與 V<sub>port</sub> 下限。
 <span class="en">Why does a 90 W Class 8 PSE leave only 71.3 W at the PD? The cable eats I²R. This page walks the whole chain — PSE, cable, bridge, hot-swap switch, DC-DC, load — and checks class power, cable current and minimum port voltage.</span></p>
 </header>
+<section class="panel" aria-labelledby="h-gloss">
+<h2 id="h-gloss"><span class="step">A–Z</span>縮寫對照 <span class="en">Abbreviations used on this page</span></h2>
+<details class="glossbox"><summary>展開／收合 Show / hide</summary><div id="gloss"></div></details>
+</section>
 <div class="grid-2">
 <section class="panel" aria-labelledby="h-param">
 <h2 id="h-param"><span class="step">1</span>設定 <span class="en">Inputs</span></h2>
@@ -114,6 +118,7 @@
 </div>
 <script src="assets/common.js"></script>
 <script>
+glossary($('gloss'), ["PoE", "PSE", "PD", "I²R", "AWG", "Cat3／Cat5e／Cat6", "CCA", "MOSFET", "FET", "HS", "R<sub>DS(on)</sub>", "V<sub>F</sub>", "DC-DC", "LLDP", "Autoclass", "TPL／TPH", "T2P", "IEEE"]);
 (function(){
 const RHO = {ieee:12.5, cat3:20, c5e:8.4, c6:6.7, cca:13.2};
 const P = {cls:4, cable:'ieee', pairs:2, bridge:'sch', vpse:50, len:100, vf:0.5, rf:50, rhs:0.3, eta:90, load:20, vout:12};

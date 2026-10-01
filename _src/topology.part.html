@@ -7,11 +7,16 @@ Choosing the PD's DC-DC stage · isolated vs non-isolated
 <!--#CHIP-->
 FLYBACK <span>·</span> FORWARD <span>·</span> BUCK
 <!--#LEDE-->
-<p class="lede">PD 介面之後的 DC-DC 要把 37–57 V 降到 12／5／3.3 V。選哪一種拓撲，主要看三件事：<b>功率</b>、<b>是否需要電氣隔離</b>（設備有沒有使用者摸得到的金屬或外接介面），以及<b>要幾路輸出</b>。調整下方條件，看各拓撲的適合程度、預估效率與發熱，再連到 DC-DC 系列看電路動畫。
+<p class="lede">PD（Powered Device，受電設備）介面之後的 DC-DC（DC-to-DC Converter，直流轉換器） 要把 37–57 V 降到 12／5／3.3 V。選哪一種拓撲，主要看三件事：<b>功率</b>、<b>是否需要電氣隔離</b>（設備有沒有使用者摸得到的金屬或外接介面），以及<b>要幾路輸出</b>。調整下方條件，看各拓撲的適合程度、預估效率與發熱，再連到 DC-DC 系列看電路動畫。
   <span class="en">After the PD interface, a DC-DC stage turns 37–57 V into board rails. The choice depends on power, whether isolation is needed, and how many outputs you need. Adjust the conditions to rank the topologies, then open the animated pages in the DC-DC series.</span></p>
 <!--#STYLE-->
 #effChart{min-width:560px}
 <!--#BODY-->
+  <section class="panel" aria-labelledby="h-gloss">
+    <h2 id="h-gloss"><span class="step">A–Z</span>縮寫對照 <span class="en">Abbreviations used on this page</span></h2>
+    <details class="glossbox"><summary>展開／收合 Show / hide</summary><div id="gloss"></div></details>
+  </section>
+
   <section class="panel" aria-labelledby="h-in">
     <h2 id="h-in"><span class="step">1</span>設計條件 <span class="en">Requirements</span></h2>
     <div class="ctl-row"><span class="lab">隔離需求 Isolation</span>
@@ -90,6 +95,7 @@ FLYBACK <span>·</span> FORWARD <span>·</span> BUCK
 拓撲建議為教學用的經驗規則：功率區間與效率範圍取自一般 PoE PD 設計常見值，屬 AI 整理的經驗值而非規範；隔離要求依 IEEE 802.3 Clause 33／145 的電氣隔離條文。實際選型請依設備安規、晶片規格書與實測效率決定。電路動畫頁在 <a href="https://dcdc-topology-series.vercel.app/" target="_blank" rel="noopener">DC-DC 拓撲系列</a>。
 <br>The ranking is a rule-of-thumb teaching aid, not a standard. Animated circuits are in the DC-DC Topology Series.
 <!--#SCRIPT-->
+glossary($('gloss'), ["PoE", "PD", "DC-DC", "MOSFET", "RCD", "SR", "PSR", "ACF", "AP", "PTZ", "RJ45", "USB", "IEEE"]);
 (function(){
   const P = {iso:'need', out:'1', pri:'cost', pw:25, vout:12};
   const TOPO = [

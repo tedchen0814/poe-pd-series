@@ -23,9 +23,13 @@
 <h1>PoE 握手狀態機<small>PSE ↔ PD handshake · Detection → Classification → Power-up → MPS</small></h1>
 </div>
 <div class="chip-dc">2.7 V <span>→</span> 20 V <span>→</span> 57 V</div>
-<p class="lede">PSE（PoE Switch）不會一插上就送 48 V。它先用低電壓<b>偵測</b> PD 是否存在（25 kΩ），再用 15–20 V 的<b>分級</b>事件問 PD 要多少功率，確認後才<b>上電</b>；上電後 PD 還要持續吸取最小電流（<b>MPS</b>）證明自己還在。下方波形是 PD 端看到的 Vport 與 Iport，時間游標與右側狀態機同步，可切換 Class、PSE 類型與常見故障情境。
+<p class="lede">PSE（Power Sourcing Equipment，供電設備，例如 PoE Switch）不會一插上就送 48 V。它先用低電壓<b>偵測</b> PD（Powered Device，受電設備）是否存在（25 kΩ），再用 15–20 V 的<b>分級</b>事件問 PD 要多少功率，確認後才<b>上電</b>；上電後 PD 還要持續吸取最小電流（<b>MPS</b>，Maintain Power Signature）證明自己還在。下方波形是 PD 端看到的 Vport 與 Iport，時間游標與右側狀態機同步，可切換 Class、PSE 類型與常見故障情境。
 <span class="en">A PSE never applies 48 V blindly. It first detects a 25 kΩ signature at low voltage, then runs classification events at 15–20 V to learn the PD's power class, and only then powers up. After that the PD must keep drawing a minimum current (MPS) or the PSE will remove power. The waveforms show Vport and Iport at the PD, synced with the state machine.</span></p>
 </header>
+<section class="panel" aria-labelledby="h-gloss">
+<h2 id="h-gloss"><span class="step">A–Z</span>縮寫對照 <span class="en">Abbreviations used on this page</span></h2>
+<details class="glossbox"><summary>展開／收合 Show / hide</summary><div id="gloss"></div></details>
+</section>
 <section class="panel" aria-labelledby="h-set">
 <h2 id="h-set"><span class="step">0</span>設定 <span class="en">Setup</span></h2>
 <div class="ctl-row"><span class="lab">PD 要求 PD class</span>
@@ -143,6 +147,7 @@
 </div>
 <script src="assets/common.js"></script>
 <script>
+glossary($('gloss'), ["PoE", "PSE", "PD", "MPS", "PG", "UVLO", "EN", "DC-DC", "TVS", "RTN", "RCLS", "DEN", "TPL／TPH", "T2P", "LLDP", "CCA", "IEEE"]);
 (function(){
 const P = {cls:4, pse:2, scn:'ok'};
 const ST = {
