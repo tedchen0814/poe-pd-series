@@ -108,7 +108,7 @@
 </div>
 </section>
 <footer>
-計算模型：線材以固定迴路電阻計算（2 對為單組線對迴路電阻，4 對為兩組並聯）；蕭特基整流在電流路徑上有兩顆二極體，損耗 2·V<sub>F</sub>·I；主動整流每組兩顆 MOSFET 導通，2 對時損耗 2·R<sub>FET</sub>·I²，4 對時兩組分流為 R<sub>FET</sub>·I²；hot-swap 損耗 R<sub>HS</sub>·I²；DC-DC 以固定效率計算。規範數值依 IEEE 802.3 Clause 33／145（Type 4 每組線對電流 0.87 A 為 90 W ÷ 52 V ÷ 2 推算）；線材電阻以 24 AWG 約 84 Ω／km、23 AWG 約 67 Ω／km（20 °C）估算。實際設計請以規範與晶片規格書為準。
+計算模型：線材以固定迴路電阻計算（2 對為單組線對迴路電阻，4 對為兩組並聯）；蕭特基整流在電流路徑上有兩顆二極體，損耗 2·V<sub>F</sub>·I；主動整流每組兩顆 MOSFET 導通，2 對時損耗 2·R<sub>FET</sub>·I²，4 對時兩組分流為 R<sub>FET</sub>·I²；hot-swap 損耗 R<sub>HS</sub>·I²；DC-DC 以固定效率計算。規範數值依 IEEE 802.3 Clause 33／145（每組線對電流上限：Type 1 為 0.35 A、Type 2／3 為 0.6 A、Type 4 為 0.96 A，後者已含線對間電流不平衡的容許量；兩組平均分流時 Type 4 實際每組約 90 W ÷ 52 V ÷ 2 ≈ 0.87 A。分級事件與降級規則、各 Type 電壓範圍已對照 <a href="https://ethernetalliance.org/wp-content/uploads/2019/12/WP_EA_Overview8023bt_V2p1_FINAL.pdf" target="_blank" rel="noopener">Ethernet Alliance 802.3bt 白皮書 v2.1</a>）；線材電阻以 24 AWG 約 84 Ω／km、23 AWG 約 67 Ω／km（20 °C）估算。實際設計請以規範與晶片規格書為準。
 <br>Model: fixed loop resistance, two conducting diodes (2·VF·I) or FETs, hot-swap I²R and a fixed DC-DC efficiency. Always verify against the standard and datasheets.
 </footer>
 </div>

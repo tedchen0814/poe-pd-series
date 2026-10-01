@@ -48,7 +48,7 @@ const POE = {
     1: {std:'802.3af', vpse:[44, 57], vpd:37,   icable:0.35,  pairs:2, maxEv:1},
     2: {std:'802.3at', vpse:[50, 57], vpd:42.5, icable:0.60,  pairs:2, maxEv:2},
     3: {std:'802.3bt', vpse:[50, 57], vpd:42.5, icable:0.60,  pairs:4, maxEv:4},
-    4: {std:'802.3bt', vpse:[52, 57], vpd:41.1, icable:0.866, pairs:4, maxEv:5}
+    4: {std:'802.3bt', vpse:[52, 57], vpd:41.1, icable:0.96,  pairs:4, maxEv:5}
   },
   // class signature the PD shows at class event n (1-based)
   sig(c, n){ if (c <= 4) return c; return n <= 2 ? 4 : c - 5; },

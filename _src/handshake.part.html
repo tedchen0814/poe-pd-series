@@ -130,7 +130,7 @@ PSE ↔ PD handshake · Detection → Classification → Power-up → MPS
     </div>
   </section>
 <!--#FOOTER-->
-數值依據：IEEE 802.3-2022 Clause 33（af／at）與 Clause 145（bt）的 PD 端要求；MPS 時間參考 TI TPS2373 規格書（Type 1/2：10 mA、75 ms／325 ms；Type 3/4：約十分之一脈衝寬度，Class 5–8 為 16 mA）；bt 多事件分級組合參考 IEEE 802.3bt 工作小組資料與 <a href="https://poepower.smps.us/classification.html" target="_blank" rel="noopener">poepower.smps.us</a>。波形為教學示意：時間軸非等比例，偵測以 4 V／8 V 兩點表示，湧浪電流取 150 mA、工作負載取核准功率的 80%，實際數值依 PSE 與 PD 控制器而異，請以規範與晶片規格書為準。
+數值依據：IEEE 802.3-2022 Clause 33（af／at）與 Clause 145（bt）的 PD 端要求；MPS 時間參考 TI TPS2373 規格書（Type 1/2：10 mA、75 ms／325 ms；Type 3/4：約十分之一脈衝寬度，Class 5–8 為 16 mA）；bt 多事件分級組合與降級規則已對照 <a href="https://ethernetalliance.org/wp-content/uploads/2019/12/WP_EA_Overview8023bt_V2p1_FINAL.pdf" target="_blank" rel="noopener">Ethernet Alliance 802.3bt 白皮書 v2.1</a>（Table 5–7）與 <a href="https://poepower.smps.us/classification.html" target="_blank" rel="noopener">poepower.smps.us</a>。波形為教學示意：時間軸非等比例，偵測以 4 V／8 V 兩點表示，湧浪電流取 150 mA、工作負載取核准功率的 80%，實際數值依 PSE 與 PD 控制器而異，請以規範與晶片規格書為準。
 <br>Values follow the PD-side limits of IEEE 802.3 Clauses 33 and 145 and the TI TPS2373 datasheet for MPS timing. The timeline is illustrative and not to scale.
 <!--#SCRIPT-->
 (function(){
