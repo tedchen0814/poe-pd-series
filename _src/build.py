@@ -43,6 +43,7 @@ def nav(current, site):
             items.append(f'<a href="PoE-{stem}_互動教學.html">{inner}</a>')
     items.append(f'<a href="{DCDC}" target="_blank" rel="noopener"><b>↗ DC-DC</b>拓撲系列</a>')
     items.append('<a href="https://multiphase-vrm-series.vercel.app/" target="_blank" rel="noopener"><b>↗ 多相 VRM</b>CPU 核心供電</a>')
+    items.append('<a href="https://network-cabling-series.vercel.app/" target="_blank" rel="noopener"><b>↗ 網路線材</b>銅纜與光纖</a>')
     return "".join(items)
 
 

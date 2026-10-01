@@ -15,7 +15,7 @@
 </head>
 <body>
 <div class="wrap">
-<nav class="series" aria-label="系列 Series"><span class="lab">系列 Series</span><a href="./"><b>HOME</b>系列首頁</a><a href="architecture.html"><b>01 ARCHITECTURE</b>架構總覽</a><a href="handshake.html"><b>02 HANDSHAKE</b>握手狀態機</a><span class="cur" aria-current="page"><b>03 POWER BUDGET</b>功率預算</span><a href="dcdc-topology.html"><b>04 DC-DC</b>拓撲選擇</a><a href="pse-switch.html"><b>05 PSE</b>供電端與預算</a><a href="lldp.html"><b>06 LLDP</b>功率協商</a><a href="https://dcdc-topology-series.vercel.app/" target="_blank" rel="noopener"><b>↗ DC-DC</b>拓撲系列</a><a href="https://multiphase-vrm-series.vercel.app/" target="_blank" rel="noopener"><b>↗ 多相 VRM</b>CPU 核心供電</a></nav>
+<nav class="series" aria-label="系列 Series"><span class="lab">系列 Series</span><a href="./"><b>HOME</b>系列首頁</a><a href="architecture.html"><b>01 ARCHITECTURE</b>架構總覽</a><a href="handshake.html"><b>02 HANDSHAKE</b>握手狀態機</a><span class="cur" aria-current="page"><b>03 POWER BUDGET</b>功率預算</span><a href="dcdc-topology.html"><b>04 DC-DC</b>拓撲選擇</a><a href="pse-switch.html"><b>05 PSE</b>供電端與預算</a><a href="lldp.html"><b>06 LLDP</b>功率協商</a><a href="https://dcdc-topology-series.vercel.app/" target="_blank" rel="noopener"><b>↗ DC-DC</b>拓撲系列</a><a href="https://multiphase-vrm-series.vercel.app/" target="_blank" rel="noopener"><b>↗ 多相 VRM</b>CPU 核心供電</a><a href="https://network-cabling-series.vercel.app/" target="_blank" rel="noopener"><b>↗ 網路線材</b>銅纜與光纖</a></nav>
 <header>
 <div>
 <div class="eyebrow">PoE PD Series · 03</div>
@@ -89,7 +89,7 @@
 <h3>線材 <span class="en">Cabling</span></h3>
 <ul>
 <li><b>用最壞值設計</b><span class="src ieee">IEEE</span><br>Class 功率已經假設 100 m、最壞的線材電阻。自己估算時若用 20 °C 的實際線阻，會低估損耗；線材溫度每升高 10 °C，銅電阻約增加 4%。<span class="en">Design with worst-case resistance; copper gains about 4% per 10 °C.</span></li>
-<li><b>避免 CCA 銅包鋁線</b><span class="src add">補充</span><br>CCA 電阻約是純銅的 1.5 倍以上，不符合 Cat5e／Cat6 規格。高功率 bt 在 CCA 長線上容易 V<sub>port</sub> 過低、線材與接頭發熱。<span class="en">Copper-clad aluminium has ~1.5× the resistance and runs hot at bt power.</span></li>
+<li><b>避免 CCA 銅包鋁線</b><span class="src add">補充</span><br>CCA 電阻約是純銅的 1.5 倍以上，不符合 Cat5e／Cat6 規格。高功率 bt 在 CCA 長線上容易 V<sub>port</sub> 過低、線材與接頭發熱。線徑與電阻可在<a href="https://network-cabling-series.vercel.app/awg-jacket.html" target="_blank" rel="noopener">網路線材系列 04 頁 ↗</a>換算。<span class="en">Copper-clad aluminium has ~1.5× the resistance and runs hot at bt power.</span></li>
 <li><b>束線發熱</b><span class="src add">補充</span><br>大量 bt 埠的線綁在一起時，每條線都在發熱，線束中心溫度上升，實際可用距離可能要縮短（佈線標準對束線數量有建議）。<span class="en">Large bundles of bt cables heat each other; derate length accordingly.</span></li>
 </ul>
 </div>
