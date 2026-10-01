@@ -32,16 +32,18 @@ return sync;
 /* IEEE 802.3af/at/bt power classes: PSE output power, PD input power, PD type, class signature per event */
 const POE = {
 classes: [
-{c:0, pse:15.4, pd:12.95, type:1},
-{c:1, pse:4.0,  pd:3.84,  type:1},
-{c:2, pse:7.0,  pd:6.49,  type:1},
-{c:3, pse:15.4, pd:12.95, type:1},
-{c:4, pse:30,   pd:25.5,  type:2},
-{c:5, pse:45,   pd:40,    type:3},
-{c:6, pse:60,   pd:51,    type:3},
-{c:7, pse:75,   pd:62,    type:4},
-{c:8, pse:90,   pd:71.3,  type:4}
+{c:0, pse:15.4, pd:12.95, type:1, vmin:37},
+{c:1, pse:4.0,  pd:3.84,  type:1, vmin:37},
+{c:2, pse:7.0,  pd:6.49,  type:1, vmin:37},
+{c:3, pse:15.4, pd:12.95, type:1, vmin:37},
+{c:4, pse:30,   pd:25.5,  type:2, vmin:42.5},
+{c:5, pse:45,   pd:40,    type:3, vmin:44.4},
+{c:6, pse:60,   pd:51,    type:3, vmin:42.5},
+{c:7, pse:75,   pd:62,    type:4, vmin:42.9},
+{c:8, pse:90,   pd:71.3,  type:4, vmin:41.1}
 ],
+// vmin: minimum PD input voltage for the assigned class (V_PSE,min with worst-case channel at full class power;
+//       Class 0–3 per Clause 33 Type 1 at 20 Ω, Class 7/8 per Clause 145: 42.9 / 41.1 V)
 sigMA: [2.5, 10.5, 18.5, 28, 40],            // mid-range class signature current (PD side 1–4, 9–12, 17–20, 26–30, 36–44 mA)
 sigRange: ['1–4', '9–12', '17–20', '26–30', '36–44'],
 types: {

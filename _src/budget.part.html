@@ -100,7 +100,7 @@ Power budget · PSE → cable → bridge → hot-swap → DC-DC → load
     </div>
   </section>
 <!--#FOOTER-->
-計算模型：線材以固定迴路電阻計算（2 對為單組線對迴路電阻，4 對為兩組並聯）；蕭特基整流在電流路徑上有兩顆二極體，損耗 2·V<sub>F</sub>·I；主動整流每組兩顆 MOSFET 導通，2 對時損耗 2·R<sub>FET</sub>·I²，4 對時兩組分流為 R<sub>FET</sub>·I²；hot-swap 損耗 R<sub>HS</sub>·I²；DC-DC 以固定效率計算。規範數值依 IEEE 802.3 Clause 33／145（每組線對電流上限：Type 1 為 0.35 A、Type 2／3 為 0.6 A、Type 4 為 0.96 A，後者已含線對間電流不平衡的容許量；兩組平均分流時 Type 4 實際每組約 90 W ÷ 52 V ÷ 2 ≈ 0.87 A。分級事件與降級規則、各 Type 電壓範圍已對照 <a href="https://ethernetalliance.org/wp-content/uploads/2019/12/WP_EA_Overview8023bt_V2p1_FINAL.pdf" target="_blank" rel="noopener">Ethernet Alliance 802.3bt 白皮書 v2.1</a>）；線材電阻以 24 AWG 約 84 Ω／km、23 AWG 約 67 Ω／km（20 °C）估算。實際設計請以規範與晶片規格書為準。
+計算模型：線材以固定迴路電阻計算（2 對為單組線對迴路電阻，4 對為兩組並聯）；蕭特基整流在電流路徑上有兩顆二極體，損耗 2·V<sub>F</sub>·I；主動整流每組兩顆 MOSFET 導通，2 對時損耗 2·R<sub>FET</sub>·I²，4 對時兩組分流為 R<sub>FET</sub>·I²；hot-swap 損耗 R<sub>HS</sub>·I²；DC-DC 以固定效率計算。規範數值依 IEEE 802.3 Clause 33／145（每組線對電流上限：Type 1 為 0.35 A、Type 2／3 為 0.6 A、Type 4 為 0.96 A，後者已含線對間電流不平衡的容許量；兩組平均分流時 Type 4 實際每組約 90 W ÷ 52 V ÷ 2 ≈ 0.87 A。分級事件與降級規則、各 Type 電壓範圍已對照 <a href="https://ethernetalliance.org/wp-content/uploads/2019/12/WP_EA_Overview8023bt_V2p1_FINAL.pdf" target="_blank" rel="noopener">Ethernet Alliance 802.3bt 白皮書 v2.1</a>）；V<sub>port</sub> 下限依核准 Class 判斷：Class 0–3 為 37 V、Class 4 為 42.5 V、Class 5 為 44.4 V、Class 6 為 42.5 V、Class 7 為 42.9 V、Class 8 為 41.1 V，即 PSE 最低電壓經最壞線材（2 對 12.5 Ω、4 對 6.25 Ω，af 為 20 Ω）在滿載 Class 功率下剩下的電壓（白皮書 Table 16 的 Class 7／8 兩列錯位一格，以 Clause 145 的 42.9／41.1 V 為準）；線材電阻以 24 AWG 約 84 Ω／km、23 AWG 約 67 Ω／km（20 °C）估算。實際設計請以規範與晶片規格書為準。
 <br>Model: fixed loop resistance, two conducting diodes (2·VF·I) or FETs, hot-swap I²R and a fixed DC-DC efficiency. Always verify against the standard and datasheets.
 <!--#SCRIPT-->
 (function(){
@@ -186,7 +186,7 @@ Power budget · PSE → cable → bridge → hot-swap → DC-DC → load
     b.push(m.Ppd <= C.pd + 1e-9 ? ['ok', `PD 端 ${F(m.Ppd, 1)} W ≤ Class ${C.c} 的 ${C.pd} W`] : ['warn', `PD 端 ${F(m.Ppd, 1)} W 超過 Class ${C.c} 的 ${C.pd} W`]);
     b.push(m.Ppse <= C.pse + 1e-9 ? ['ok', `PSE 端 ${F(m.Ppse, 1)} W ≤ ${C.pse} W`] : ['warn', `PSE 端 ${F(m.Ppse, 1)} W 超過 ${C.pse} W 分配`]);
     b.push(perPair <= T.icable + 1e-9 ? ['ok', `每組線對 ${F(perPair, 3)} A ≤ ${T.icable} A`] : ['warn', `每組線對 ${F(perPair, 3)} A 超過 ${T.icable} A`]);
-    b.push(m.Vport >= T.vpd ? ['ok', `V<sub>port</sub> ${F(m.Vport, 1)} V ≥ ${T.vpd} V`] : ['warn', `V<sub>port</sub> ${F(m.Vport, 1)} V 低於 ${T.vpd} V 下限`]);
+    b.push(m.Vport >= C.vmin ? ['ok', `V<sub>port</sub> ${F(m.Vport, 1)} V ≥ Class ${C.c} 下限 ${C.vmin} V`] : ['warn', `V<sub>port</sub> ${F(m.Vport, 1)} V 低於 Class ${C.c} 下限 ${C.vmin} V`]);
     b.push(['info', `這個 Class 最多可帶 ${F(m.maxLoad, 1)} W 負載`]);
     $('badges').innerHTML = b.map(([k, t]) => `<span class="badge ${k}">${t}</span>`).join('');
     $('bigres').innerHTML = [
