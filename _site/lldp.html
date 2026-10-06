@@ -113,14 +113,15 @@
 </section>
 <section class="panel" aria-labelledby="h-tlv">
 <h2 id="h-tlv"><span class="step">3</span>Power via MDI TLV：每一個 bit <span class="en">Power via MDI TLV, bit by bit</span></h2>
-<p class="lede" style="margin:0 0 10px">TLV 標頭 2 bytes：前 7 bits 是型別 127（組織自訂），後 9 bits 是內容長度。內容以 OUI 00-12-0F（IEEE 802.3）和子類型 0x02（Power via MDI）開頭。舊版只有 7 bytes，802.3at 擴充到 <b>12 bytes</b>，802.3bt 再擴充到 <b>29 bytes</b>。點任何一個 byte 看它的 bit；改下表的欄位，hex 會即時更新；也可以把抓包工具（例如 Wireshark）的 hex 貼進來解碼。
+<p class="lede" style="margin:0 0 10px">TLV 標頭 2 bytes：前 7 bits 是型別 127（組織自訂），後 9 bits 是內容長度。內容以 OUI 00-12-0F（IEEE 802.3）和子類型 0x02（Power via MDI）開頭。舊版（IEEE 802.1AB）只有 7 bytes，802.3at 擴充到 <b>12 bytes</b>，802.3bt 再擴充到 <b>29 bytes</b>，三種格式都可以切換。點任何一個 byte 看它的 bit；改下表的欄位，hex 會即時更新；也可以把抓包工具（例如 Wireshark）的 hex 貼進來解碼。
 <span class="en">Header: 7-bit type 127 + 9-bit length. Content starts with OUI 00-12-0F and subtype 2. Legacy 7 bytes, at 12 bytes, bt 29 bytes.</span></p>
 <div class="opts" style="display:flex;flex-wrap:wrap;gap:10px 22px;margin-bottom:8px">
-<div class="ctl"><span class="lab" style="font-weight:700;color:var(--muted)">格式</span><div class="seg" id="tlvFmt" role="group" aria-label="Format"><button type="button" data-v="12">802.3at · 12 bytes</button><button type="button" data-v="29">802.3bt · 29 bytes</button></div></div>
+<div class="ctl"><span class="lab" style="font-weight:700;color:var(--muted)">格式</span><div class="seg" id="tlvFmt" role="group" aria-label="Format"><button type="button" data-v="7">舊版 · 7 bytes</button><button type="button" data-v="12">802.3at · 12 bytes</button><button type="button" data-v="29">802.3bt · 29 bytes</button></div></div>
 </div>
 <div class="presets" id="tlvPresets" style="margin-top:0"><span>範例 Presets：</span></div>
 <div class="bytes" id="tlvBytes"></div>
 <div class="infobox" id="tlvBit" style="--c:var(--accent);min-height:0"></div>
+<div id="tlvCaution" style="margin-top:8px"></div>
 <div class="scroll-x" style="margin-top:12px"><table class="ftbl" id="tlvTbl"></table></div>
 <div style="margin-top:12px">
 <label for="hexIn" style="font-weight:700;font-size:14px">貼上 hex 解碼 <span class="en" style="display:inline">Paste hex (with or without the 2-byte header)</span></label>
@@ -204,8 +205,8 @@
 </div>
 </section>
 <footer>
-數值依據：Power via MDI TLV 欄位定義依 IEEE 802.3 Clause 79（802.3at／bt 擴充），DLL 分級規則依 Clause 33.6 與 Clause 145.5，並對照 <a href="https://ethernetalliance.org/wp-content/uploads/2019/12/WP_EA_Overview8023bt_V2p1_FINAL.pdf" target="_blank" rel="noopener">Ethernet Alliance 802.3bt 白皮書 v2.1</a>（5.4 節、Table 11、第 11 章 Table 21）；每個 bit 的位置對照 <a href="https://github.com/wireshark/wireshark/blob/master/epan/dissectors/packet-lldp.c" target="_blank" rel="noopener">Wireshark LLDP 解析器原始碼</a>；PSE／PD 允許值範圍（Table 145-41／145-42）依 IEEE 802.3bt 工作小組 <a href="https://grouper.ieee.org/groups/802/3/bt/public/sep17/yseboodt_04_0917_LLDP.pdf" target="_blank" rel="noopener">yseboodt_04_0917</a>；PSE 10 秒回覆要求依 Clause 33.6（見 <a href="https://github.com/lldpd/lldpd/issues/249" target="_blank" rel="noopener">lldpd issue #249</a> 引述）；增減功率順序與 at PD 開機流程參考 <a href="https://silvertel.com/images/appsnotes/ANX-POE-Data-Link-Layer-Classification.pdf" target="_blank" rel="noopener">Silvertel DLL 應用筆記</a>。Power down 欄位：6-bit 請求碼＋18-bit 時間；2015 年提案稿的 8-bit 觸發碼為 0xDD，定稿改為 6-bit 欄位，本頁以 0x1D（0xDD 的低 6 bits）作為觸發碼，尚待 IEEE 原文確認。協商情境中的功率數字為教學範例。
-<br>Field layout per IEEE 802.3 Clause 79 cross-checked with the Wireshark LLDP dissector; exchange rules per Clauses 33.6 and 145.5. The power-down trigger code 0x1D is pending confirmation against the standard text.
+數值依據：Power via MDI TLV 欄位定義依 IEEE 802.3 Clause 79（802.3at／bt 擴充），DLL 分級規則依 Clause 33.6 與 Clause 145.5，並對照 <a href="https://ethernetalliance.org/wp-content/uploads/2019/12/WP_EA_Overview8023bt_V2p1_FINAL.pdf" target="_blank" rel="noopener">Ethernet Alliance 802.3bt 白皮書 v2.1</a>（5.4 節、Table 11、第 11 章 Table 21）；每個 bit 的位置對照 <a href="https://github.com/wireshark/wireshark/blob/master/epan/dissectors/packet-lldp.c" target="_blank" rel="noopener">Wireshark LLDP 解析器原始碼</a>；PSE／PD 允許值範圍（Table 145-41／145-42）依 IEEE 802.3bt 工作小組 <a href="https://grouper.ieee.org/groups/802/3/bt/public/sep17/yseboodt_04_0917_LLDP.pdf" target="_blank" rel="noopener">yseboodt_04_0917</a>；PSE 10 秒回覆要求依 Clause 33.6（見 <a href="https://github.com/lldpd/lldpd/issues/249" target="_blank" rel="noopener">lldpd issue #249</a> 引述）；增減功率順序與 at PD 開機流程參考 <a href="https://silvertel.com/images/appsnotes/ANX-POE-Data-Link-Layer-Classification.pdf" target="_blank" rel="noopener">Silvertel DLL 應用筆記</a>。Power down 欄位：6-bit 請求碼＋18-bit 時間（秒，0＝無限期）；2015 年提案稿的 8-bit 觸發碼為 0xDD，<a href="https://www.ieee802.org/3/bt/public/may17/yseboodt_04_0517_powerdowndelay.pdf" target="_blank" rel="noopener">IEEE 802.3bt 工作小組 D2.4 文件 yseboodt_04_0517</a> 把欄位改為 3 octets、觸發碼改為 <b>0x1D</b>、TLV 長度改為 29。這是工作小組文件，<b>尚未對照 IEEE 802.3bt 標準正本</b>，頁面上的斷電欄位因此標為「待核對」，預設不啟用。協商情境中的功率數字為教學範例。
+<br>Field layout per IEEE 802.3 Clause 79 cross-checked with the Wireshark LLDP dissector; exchange rules per Clauses 33.6 and 145.5. The power-down trigger code 0x1D follows 802.3bt working-group document D2.4 and has not been checked against the published standard.
 </footer>
 </div>
 <script src="assets/common.js"></script>
@@ -257,7 +258,7 @@ const FIELDS = [
 {k:'acDone', m:0x02, zh:'Autoclass 量測完成', opt:{1:'完成', 0:'未完成'}},
 {k:'acReq', m:0x01, zh:'PD 要求 Autoclass', opt:{1:'要求', 0:'無'}}]},
 {g:'bt', zh:'斷電', en:'Power down', o:26, n:3, c:C.w, subs:[
-{k:'pdReq', m:0xFC0000, zh:'斷電請求碼（0x1D＝請求斷電）', opt:{0:'無', 29:'0x1D 請求斷電'}},
+{k:'pdReq', m:0xFC0000, zh:'斷電請求碼（⚠ 依工作小組 D2.4 文件，標準正本未核對）', opt:{0:'無（預設）', 29:'0x1D 請求斷電（工作小組文件定義）'}, caution:true},
 {k:'pdTime', m:0x03FFFF, zh:'喚醒時間（秒，0＝不自動喚醒）', num:[0, 262143]}]}
 ];
 const ALL = []; FIELDS.forEach(f => f.subs.forEach(s => ALL.push(Object.assign(s, {f}))));
@@ -270,7 +271,7 @@ const TLV_PRE = [
 {l:'Class 6 PD 要求 43 W', fmt:29, v:{pclass:5, ptype:1, psrc:1, p4pid:1, prio:2, req:430, alloc:510, pdStat:1, dsA:7, dsB:7, clsExt:6, typeExt:2}},
 {l:'at PD 要求 20 W（12 bytes）', fmt:12, v:{pclass:5, ptype:1, psrc:1, prio:3, req:200, alloc:200}},
 {l:'雙特徵 PD 各要 30 W', fmt:29, v:{pclass:5, ptype:1, psrc:1, p4pid:1, prio:2, req:0, alloc:0, reqA:300, reqB:300, pdStat:3, dsA:4, dsB:4, clsExt:15, typeExt:5, pdLoad:1}},
-{l:'PD 請求斷電，1 小時後喚醒', fmt:29, v:{pclass:5, ptype:1, psrc:1, prio:3, req:255, alloc:255, pdStat:1, dsA:7, dsB:7, clsExt:4, typeExt:2, pdReq:29, pdTime:3600}}
+{l:'⚠ PD 請求斷電（工作小組文件定義，待正本核對）', fmt:29, v:{pclass:5, ptype:1, psrc:1, prio:3, req:255, alloc:255, pdStat:1, dsA:7, dsB:7, clsExt:4, typeExt:2, pdReq:29, pdTime:3600}}
 ];
 setPreset(TLV_PRE[0]);
 function encode(){
@@ -305,8 +306,9 @@ f.subs.forEach(s => { if (!s.fixedV && !s.rsv) v[s.k] = (word & s.m) >>> shiftOf
 return {v, len:info.length};
 }
 const hex2 = n => n.toString(16).toUpperCase().padStart(2, '0');
+const CAUTION = '<p class="badge warn" style="display:inline-block;margin:6px 0 0">⚠ 斷電欄位：0x1D 觸發碼與 18-bit 時間依 IEEE 802.3bt 工作小組 D2.4 文件（yseboodt_04_0517），尚未對照標準正本，產生的 TLV 僅供教學參考</p>';
 function tlvRender(){
-if (T.fmt === 12 && T.sel > 13) T.sel = 7;
+if (T.sel > T.fmt + 1) T.sel = Math.min(T.fmt + 1, 6);
 setSeg('tlvFmt', T.fmt);
 const bytes = encode();
 // byte grid
@@ -334,7 +336,7 @@ const head = `<h3><span class="tag">byte ${f.o}${f.n > 1 ? '–' + (f.o + f.n - 
 if (f.subs[0].fixedV) html = head + '<p class="num" style="font-size:15px">00 12 0F · 02</p>' + fieldNote(f);
 else {
 const subs = f.subs.map(s => ({m:s.m, zh:s.rsv ? '保留（填 0）' : s.zh + ' = ' + label(s, (word & s.m) >>> shiftOf(s.m))}));
-html = head + bitBlock(word >>> 0, f.n*8, subs, f.c) + fieldNote(f);
+html = head + bitBlock(word >>> 0, f.n*8, subs, f.c) + fieldNote(f) + (f.o === 26 ? CAUTION : '');
 }
 }
 $('tlvBit').style.setProperty('--c', T.sel < 2 ? 'var(--muted)' : FIELDS.find(g => T.sel - 2 >= g.o && T.sel - 2 < g.o + g.n).c);
@@ -344,7 +346,7 @@ let t = '<thead><tr><th>byte</th><th>欄位</th><th>bits</th><th>值</th><th>設
 let grp = '';
 FIELDS.forEach(f => {
 if (f.o + f.n > T.fmt) return;
-if (f.g !== grp) { grp = f.g; t += `<tr class="grp"><td colspan="6">${f.g === 'bt' ? '802.3bt 擴充（byte 12–28）' : f.g === 'at' ? '802.3at（byte 4–11；舊版只到 byte 6）' : 'OUI 與子類型（byte 0–3）'}</td></tr>`; }
+if (f.g !== grp) { grp = f.g; t += `<tr class="grp"><td colspan="6">${f.g === 'bt' ? '802.3bt 擴充（byte 12–28）' : f.g === 'at' ? (T.fmt === 7 ? '舊版 802.1AB（byte 4–6，沒有功率欄位）' : '802.3at（byte 4–11；舊版只到 byte 6）') : 'OUI 與子類型（byte 0–3）'}</td></tr>`; }
 f.subs.forEach((s, j) => {
 if (s.rsv) return;
 const sel = T.sel >= 2 && T.sel - 2 >= f.o && T.sel - 2 < f.o + f.n;
@@ -357,6 +359,7 @@ t += `<tr class="${sel ? 'sel' : ''}"><td class="m">${j === 0 ? f.o + (f.n > 1 ?
 });
 });
 $('tlvTbl').innerHTML = t + '</tbody>';
+$('tlvCaution').innerHTML = T.fmt === 29 && T.v.pdReq ? CAUTION : '';
 $('tlvTbl').querySelectorAll('[data-k]').forEach(el => el.addEventListener('change', () => {
 const s = ALL.find(x => x.k === el.dataset.k); let v = parseInt(el.value, 10) || 0;
 if (s.num) v = Math.max(s.num[0], Math.min(s.num[1], v));
@@ -390,7 +393,7 @@ const n = {
 22:'<p>Power type ext 告訴對方自己是 Type 3 或 Type 4、單一或雙特徵；bit 0 只對雙特徵 PD 有意義，表示兩組線對的負載是否電氣隔離。</p>',
 23:'<p>PSE 告訴 PD「現在最多可能給到多少」，只是提示。PD 要拿到功率仍要送要求值，看分配值有沒有更新。</p>',
 25:'<p>PD 可以用 bit 0 請 PSE 重新做 Autoclass 量測；PSE 用 bit 2 表示自己支援、bit 1 表示量測已完成。</p>',
-26:'<p>PD 不再需要電時，可以請 PSE 斷電，並設定 PSE 在多少秒後重新上電（喚醒）。最高 6 bits 是請求碼，其餘 18 bits 是時間（秒），最長約 72.8 小時。</p>'
+26:'<p>PD 不再需要電時，可以請 PSE 斷電，並設定 PSE 在多少秒後重新上電（喚醒）。最高 6 bits 是請求碼（0x1D 觸發，其他值忽略），其餘 18 bits 是時間（秒，0＝無限期，最長約 72.8 小時）。</p>'
 };
 return n[f.o] || '<p>OUI 00-12-0F 代表這是 IEEE 802.3 定義的 TLV，子類型 2 代表 Power via MDI。</p>';
 }
@@ -402,10 +405,15 @@ if (txt.length % 2) { $('hexMsg').innerHTML = '<span class="badge warn">hex 字�
 const bytes = []; for (let i = 0; i < txt.length; i += 2) bytes.push(parseInt(txt.substr(i, 2), 16));
 const r = decode(bytes);
 if (r.err) { $('hexMsg').innerHTML = `<span class="badge warn">${r.err}</span>`; return; }
-if (r.len === 7) { $('hexMsg').innerHTML = '<span class="badge info">舊版 7 bytes：只有 MDI 支援、線對、Class，沒有功率欄位</span>'; }
 ALL.forEach(s => { if (!s.fixedV) T.v[s.k] = r.v[s.k] || 0; });
-T.fmt = r.len === 7 ? 12 : r.len; T.sel = 10; tlvRender();
-if (r.len !== 7) $('hexMsg').innerHTML = `<span class="badge ok">解碼成功：${r.len} bytes，PD 要求 ${W(T.v.req)}、PSE 分配 ${W(T.v.alloc)}</span>`;
+T.fmt = r.len; T.sel = r.len === 7 ? 6 : 10;
+const raw = $('hexIn').value; tlvRender(); $('hexIn').value = raw;   // keep what the user pasted
+const enc = encode().slice(2), info = bytes.length === r.len ? bytes : bytes.slice(2, 2 + r.len);
+const diff = info.map((x, i) => x !== enc[i] ? i : -1).filter(i => i >= 0);
+const msg = [r.len === 7 ? ['info', '舊版 7 bytes（IEEE 802.1AB）：只有 MDI 支援、線對、Class，沒有功率欄位，依原格式顯示'] : ['ok', `解碼成功：${r.len} bytes，PD 要求 ${W(T.v.req)}、PSE 分配 ${W(T.v.alloc)}`]];
+if (diff.length) msg.push(['warn', `byte ${diff.join('、')} 含保留位元或未定義值：上方欄位表顯示的是規範定義的部分，輸入框保留你貼上的原始封包`]);
+if (r.len === 29 && T.v.pdReq) msg.push(['warn', '含斷電請求：0x1D 依工作小組文件定義，待標準正本核對']);
+$('hexMsg').innerHTML = msg.map(([k, t]) => `<span class="badge ${k}">${t}</span>`).join(' ');
 });
 tlvRender();
 /* ================= sequence scenarios ================= */

@@ -208,7 +208,7 @@ PSE side · detection, classification, inrush, current limit, MPS &amp; switch p
     </div>
   </section>
 <!--#FOOTER-->
-數值依據：PSE 偵測、湧浪、限流範本、MPS 依 IEEE 802.3 Clause 33（Type 1／2）與 Clause 145（Type 3／4），並對照 <a href="https://ethernetalliance.org/wp-content/uploads/2019/12/WP_EA_Overview8023bt_V2p1_FINAL.pdf" target="_blank" rel="noopener">Ethernet Alliance 802.3bt 白皮書 v2.1</a>（偵測 3 章、分級 Table 5／7、湧浪 Figure 19、限流範本 Figure 22／23、MPS Table 19／20、P<sub>Class</sub>／P<sub>Peak</sub> Table 14）；PSE 偵測接受／拒絕範圍（19–26.5 kΩ／&lt; 15 kΩ、&gt; 33 kΩ、&gt; 10 µF）依 Clause 33.2.5；Type 1／2 PSE 的 I<sub>Hold</sub> 5–10 mA、T<sub>MPS</sub> 60 ms、T<sub>MPDO</sub> 300–400 ms 依 Clause 33。PSE 晶片架構參考 <a href="https://ti.com/lit/pdf/SLVSF02" target="_blank" rel="noopener">TI TPS23881 規格書</a>。交換器分配模式（依 Class／LLDP／用量／混合）整理自 Cisco、Aruba、Extreme、Westermo 等廠商文件，屬一般做法，各家細節不同。模型簡化：限流範本的下界以兩組線對平均分流估算，未計入線對間不平衡；湧浪以定電流充電估算；預算模擬器的 PSE 端功率以最壞線材（2 對 12.5 Ω、4 對 6.25 Ω）把 PD 功率換算回 PSE 端。實際設計請以規範與晶片規格書為準。
+數值依據：PSE 偵測、湧浪、限流範本、MPS 依 IEEE 802.3 Clause 33（Type 1／2）與 Clause 145（Type 3／4），並對照 <a href="https://ethernetalliance.org/wp-content/uploads/2019/12/WP_EA_Overview8023bt_V2p1_FINAL.pdf" target="_blank" rel="noopener">Ethernet Alliance 802.3bt 白皮書 v2.1</a>（偵測 3 章、分級 Table 5／7、湧浪 Figure 19、限流範本 Figure 22／23、MPS Table 19／20、P<sub>Class</sub>／P<sub>Peak</sub> Table 14）；PSE 偵測接受／拒絕範圍（19–26.5 kΩ／&lt; 15 kΩ、&gt; 33 kΩ、&gt; 10 µF）依 Clause 33.2.5；Type 1／2 PSE 的 I<sub>Hold</sub> 5–10 mA、T<sub>MPS</sub> 60 ms、T<sub>MPDO</sub> 300–400 ms 依 Clause 33。PSE 晶片架構參考 <a href="https://ti.com/lit/pdf/SLVSF02" target="_blank" rel="noopener">TI TPS23881 規格書</a>。交換器分配模式（依 Class／LLDP／用量／混合）整理自 Cisco、Aruba、Extreme、Westermo 等廠商文件，屬一般做法，各家細節不同。模型簡化：限流範本的下界以兩組線對平均分流估算，未計入線對間不平衡；湧浪以定電流充電估算；預算模擬器中「依 Class」用規範固定的 PSE 端保留值，其他三種模式統一用畫面上的線長與 PSE 電壓（Cat5e 最壞 12.5 Ω／100 m，4 對減半）把 PD 功率換算回 PSE 端。實際設計請以規範與晶片規格書為準。
 <br>Teaching models based on IEEE 802.3 Clauses 33 and 145, the Ethernet Alliance 802.3bt overview and TI TPS23881. Switch allocation behaviour varies by vendor.
 <!--#SCRIPT-->
 (function(){
@@ -503,13 +503,14 @@ PSE side · detection, classification, inrush, current limit, MPS &amp; switch p
     ptz:{zh:'PTZ＋加熱器', cls:8, typ:40, peak:68, lldp:68, auto:true}
   };
   const PRI = {c:{zh:'Critical', r:0}, h:{zh:'High', r:1}, l:{zh:'Low', r:2}};
-  const SW = {mode:'class', load:'typ', dem:1, budget:370, guard:0, ports:Array.from({length:24}, () => ({d:'none', p:'l'}))};
+  const SW = {mode:'class', load:'typ', dem:1, budget:370, guard:0, len:100, vpse:52, ports:Array.from({length:24}, () => ({d:'none', p:'l'}))};
   const PRESETS = {
     '辦公室混合':'phone*8,ap6*4,ap7*2,cam*4,thin*2,sens*2,ptz*1',
     '全部 Wi-Fi 7 AP':'ap7*12,ptz*2',
     '安控（攝影機為主）':'cam*16,ptz*4,sens*2'
   };
-  sliders([{k:'budget', zh:'PoE 總預算', en:'PSU budget', min:120, max:740, step:10, fmt:v => v.toFixed(0) + ' W'}, {k:'guard', zh:'保留量', en:'Guard band', min:0, max:60, step:1, fmt:v => v.toFixed(0) + ' W'}], SW, $('swParams'), swUpdate);
+  sliders([{k:'budget', zh:'PoE 總預算', en:'PSU budget', min:120, max:740, step:10, fmt:v => v.toFixed(0) + ' W'}, {k:'guard', zh:'保留量', en:'Guard band', min:0, max:60, step:1, fmt:v => v.toFixed(0) + ' W'},
+    {k:'len', zh:'線長（所有埠共用）', en:'Cable length', min:5, max:100, step:5, fmt:v => v.toFixed(0) + ' m'}, {k:'vpse', zh:'PSE 輸出電壓（所有埠共用）', en:'VPSE', min:50, max:57, step:0.5, fmt:v => v.toFixed(1) + ' V'}], SW, $('swParams'), swUpdate);
   Object.keys(PRESETS).forEach(k => {
     const b = document.createElement('button'); b.type = 'button'; b.textContent = k;
     b.addEventListener('click', () => {
@@ -538,12 +539,14 @@ PSE side · detection, classification, inrush, current limit, MPS &amp; switch p
       box.appendChild(el);
     });
   }
+  // PD-side watts -> PSE-side watts with the shared cable length / PSE voltage (Cat5e worst case 12.5 ohm per 100 m loop, halved for 4-pair)
+  function toPse(w, cls){ const r = (cls >= 5 ? 6.25 : 12.5)*SW.len/100, p = pseW(w, cls, SW.vpse, r); return isFinite(p) ? p : w*2; }
   // power the PSE must reserve for a port under the current mode
   function want(dev){
     const D = DEV[dev], draw = SW.load === 'peak' ? D.peak : D.typ;
-    const realPse = w => pseW(w, D.cls, 54, (D.cls >= 5 ? 6.25 : 12.5)*0.5);   // typical: 54 V, 50 m cable
+    const realPse = w => toPse(w, D.cls);   // same cable length and PSE voltage for every mode
     if (SW.mode === 'class') return {res:PCLASS[D.cls], how:'Class ' + D.cls};
-    if (SW.mode === 'lldp') return D.lldp ? {res:pseW(D.lldp, D.cls), how:'LLDP ' + D.lldp + ' W'} : {res:PCLASS[D.cls], how:'無 LLDP → Class'};
+    if (SW.mode === 'lldp') return D.lldp ? {res:realPse(D.lldp), how:'LLDP ' + D.lldp + ' W'} : {res:PCLASS[D.cls], how:'無 LLDP → Class'};
     if (SW.mode === 'usage') return {res:realPse(draw), how:'實際用量'};
     if (D.auto) { const m = D.cls >= 7 ? 1.75 : D.cls >= 5 ? 0.75 : 0.5; return {res:realPse(D.peak) + m, how:'Autoclass 實測＋' + m + ' W'}; }
     return {res:PCLASS[D.cls], how:'不支援 → Class'};
@@ -569,7 +572,7 @@ PSE side · detection, classification, inrush, current limit, MPS &amp; switch p
       el.querySelector('.st').textContent = p.d === 'none' ? '' : r.st === 'on' ? '供電中' : r.st === 'dem' ? '降級' : '不供電';
       if (p.d === 'none') { el.querySelector('.rd').textContent = ''; return; }
       const draw = r.st === 'off' ? 0 : Math.min(SW.load === 'peak' ? D.peak : D.typ, r.st === 'dem' ? PDCLS[r.a] : Infinity);
-      actual += r.st === 'off' ? 0 : pseW(draw, D.cls, 54, (D.cls >= 5 ? 6.25 : 12.5)*0.5);
+      actual += r.st === 'off' ? 0 : toPse(draw, D.cls);
       el.querySelector('.rd').textContent = `保留 ${fx(r.res, 1)} W · ${r.how}`;
     });
     const n = order.length, on = Object.values(R).filter(r => r.st === 'on').length, dem = Object.values(R).filter(r => r.st === 'dem').length, off = n - on - dem;
@@ -586,11 +589,11 @@ PSE side · detection, classification, inrush, current limit, MPS &amp; switch p
     $('swScale').innerHTML = `<span>0 W</span><span>可分配 ${fx(avail, 0)} W（紅線）</span><span>${fx(scale, 0)} W</span>`;
     const modeTxt = {
       class:'<b>依 Class</b>：每個埠直接保留該 Class 的 PSE 端上限（例如 Class 4 保留 30 W、Class 8 保留 90 W）。最安全，任何 PD 都不會超出保留量，但保留量遠大於實際用量，接得最少。',
-      lldp:'<b>依 LLDP</b>：PD 上電後用 LLDP 告訴交換器實際需要多少（PD 端功率），交換器加上最壞線損換算回 PSE 端再保留。沒送 LLDP 的設備退回依 Class。比依 Class 省很多，仍有規範保障。',
+      lldp:'<b>依 LLDP</b>：PD 上電後用 LLDP 告訴交換器實際需要多少（PD 端功率），交換器加上線損換算回 PSE 端再保留。沒送 LLDP 的設備退回依 Class。比依 Class 省很多，仍有規範保障。',
       usage:'<b>依實際用量</b>（動態）：只扣每個埠<b>此刻</b>量到的耗電。接得最多，但切到「全部尖峰」就會看到總用量超過預算，交換器只能臨時卸載低優先權的埠——這就是動態模式的風險。',
       auto:'<b>Autoclass</b>：支援的 PD 上電後先刻意跑最大功率，PSE 在 1.4–3.5 s 之間量測（已包含實際線損），再加一點餘量（Class 1–4 加 0.5 W、5–6 加 0.75 W、7–8 加 1.75 W）作為保留量。不支援的 PD 退回依 Class。'
     }[SW.mode];
-    $('swInfo').innerHTML = `<p>${modeTxt}</p><p class="en">Bars: blue Critical, teal High, green Low, orange demoted. Ports are served by priority, then by lower port number.</p>` + (over ? '<p style="color:var(--warn);font-weight:700">尖峰同時發生：被卸載的埠是原本已經在用的設備，使用者會看到設備突然重開機。</p>' : '');
+    $('swInfo').innerHTML = `<p>${modeTxt}</p><p style="font-size:13px;color:var(--muted)">比較基準：依 Class 用規範固定的 PSE 端保留值；依 LLDP、依實際用量、Autoclass 三種模式都用上方同一組線長（${SW.len} m，Cat5e 最壞 12.5 Ω／100 m 迴路，4 對減半）與 PSE 電壓（${SW.vpse} V）換算，模式之間的差異只來自分配方式本身。</p><p class="en">Bars: blue Critical, teal High, green Low, orange demoted. Ports are served by priority, then by lower port number.</p>` + (over ? '<p style="color:var(--warn);font-weight:700">尖峰同時發生：被卸載的埠是原本已經在用的設備，使用者會看到設備突然重開機。</p>' : '');
   }
   renderPorts();
   (function(){ const list = []; PRESETS['辦公室混合'].split(',').forEach(x => { const [d, n] = x.split('*'); for (let i = 0; i < +n; i++) list.push(d); });
