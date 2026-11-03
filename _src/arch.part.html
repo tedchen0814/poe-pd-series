@@ -302,7 +302,7 @@ glossary($('gloss'), ["PoE", "PSE", "PD", "DC-DC", "ALT A／B", "RJ45", "PHY", "
   }
 
   // ---- animation ----
-  let playing = !REDUCED, off = 0, last = null;
+  let playing = true, off = 0, last = null;
   function frame(ts){
     if (last == null) last = ts;
     const dt = Math.min(0.05, (ts - last)/1000); last = ts;

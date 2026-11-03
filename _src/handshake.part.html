@@ -404,7 +404,7 @@ glossary($('gloss'), ["PoE", "PSE", "PD", "MPS", "PG", "UVLO", "EN", "DC-DC", "T
   }
 
   // ---------- animation ----------
-  let u = 0, playing = !REDUCED, speed = 1, last = null, lastSeg = null;
+  let u = 0, playing = true, speed = 1, last = null, lastSeg = null;
   const segAt = x => S.find(s => x >= s.u0 && x < s.u1) || S[S.length - 1];
   function render(){
     const s = segAt(u), f = Math.min(1, (u - s.u0)/s.w), x = xs(u);
