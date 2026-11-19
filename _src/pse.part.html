@@ -7,8 +7,8 @@ PSE side · detection, classification, inrush, current limit, MPS &amp; switch p
 <!--#CHIP-->
 24 埠 <span>·</span> 370 W
 <!--#LEDE-->
-<p class="lede">前面幾頁都站在 PD（Powered Device，受電設備）這一端。這一頁換到 PSE（Power Sourcing Equipment，供電設備，通常就是 PoE Switch）那一端：它怎麼用兩點量測<b>偵測</b> PD、依自己剩下的電源<b>決定給幾次分級事件</b>、怎麼控制<b>湧浪</b>與<b>過流</b>、怎麼用 MPS（Maintain Power Signature，維持供電特徵）判斷 PD 還在不在，最後再看一台 24 埠、370 W 的交換器怎麼把有限的電源<b>分配</b>給所有埠。
-  <span class="en">The PSE's view: two-point detection, how many class events to grant, inrush and current-limit templates, MPS monitoring, and how a 24-port 370 W switch shares its power budget.</span></p>
+<p class="lede">電從這裡出發。PSE（Power Sourcing Equipment，供電設備，通常就是 PoE Switch）是整條電源鏈的起點，線的另一端是 PD（Powered Device，受電設備）。這一頁看 PSE 怎麼用兩點量測<b>偵測</b> PD、依自己剩下的電源<b>決定給幾次分級事件</b>、怎麼控制<b>湧浪</b>與<b>過流</b>、怎麼用 MPS（Maintain Power Signature，維持供電特徵）判斷 PD 還在不在，最後再看一台 24 埠、370 W 的交換器怎麼把有限的電源<b>分配</b>給所有埠。
+  <span class="en">Where the power starts. The PSE's view: two-point detection, how many class events to grant, inrush and current-limit templates, MPS monitoring, and how a 24-port 370 W switch shares its power budget.</span></p>
 <!--#STYLE-->
 .grid-2>*{min-width:0}
 .opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px 22px;margin-bottom:12px}
@@ -51,7 +51,7 @@ PSE side · detection, classification, inrush, current limit, MPS &amp; switch p
         <tr><td>MDI</td><td>Medium Dependent Interface</td><td>媒體相關介面：RJ45 接頭與線對本身</td></tr>
         <tr><td>MPS</td><td>Maintain Power Signature</td><td>維持供電特徵：PD 上電後必須持續吸取的最小電流，PSE 靠它判斷 PD 還接著</td></tr>
         <tr><td>PSU</td><td>Power Supply Unit</td><td>交換器的電源供應器，它的額定功率就是 PoE 總預算的上限</td></tr>
-        <tr><td>LLDP</td><td>Link Layer Discovery Protocol</td><td>鏈結層探索協定，PD 上電後用它重新協商功率（詳見 06 頁）</td></tr>
+        <tr><td>LLDP</td><td>Link Layer Discovery Protocol</td><td>鏈結層探索協定，PD 上電後用它重新協商功率（詳見 03 頁）</td></tr>
         <tr><td>DLL</td><td>Data Link Layer (classification)</td><td>資料鏈結層分級，就是透過 LLDP 協商功率</td></tr>
         <tr><td>ILIM</td><td>Current Limit (I<sub>LIM</sub>)</td><td>限流值：短路或過載時 PSE 把電流壓住的上限</td></tr>
         <tr><td>ICUT／PCUT</td><td>Overload Current / Power Cutoff</td><td>過載切斷門檻（電流或功率），超過並持續 T<sub>CUT</sub> 後斷電</td></tr>

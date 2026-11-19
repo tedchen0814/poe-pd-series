@@ -40,15 +40,15 @@
 </head>
 <body>
 <div class="wrap">
-<nav class="series" aria-label="系列 Series"><span class="lab">系列 Series</span><a href="./"><b>HOME</b>系列首頁</a><a href="architecture.html"><b>01 ARCHITECTURE</b>架構總覽</a><a href="handshake.html"><b>02 HANDSHAKE</b>握手狀態機</a><a href="power-budget.html"><b>03 POWER BUDGET</b>功率預算</a><a href="dcdc-topology.html"><b>04 DC-DC</b>拓撲選擇</a><span class="cur" aria-current="page"><b>05 PSE</b>供電端與預算</span><a href="lldp.html"><b>06 LLDP</b>功率協商</a><a href="https://dcdc-topology-series.vercel.app/" target="_blank" rel="noopener"><b>↗ DC-DC</b>拓撲系列</a><a href="https://multiphase-vrm-series.vercel.app/" target="_blank" rel="noopener"><b>↗ 多相 VRM</b>CPU 核心供電</a><a href="https://network-cabling-series.vercel.app/" target="_blank" rel="noopener"><b>↗ 網路線材</b>銅纜與光纖</a><a href="https://power-amp-series.vercel.app/" target="_blank" rel="noopener"><b>↗ 功率放大器</b>Class A–D</a></nav>
+<nav class="series" aria-label="系列 Series"><span class="lab">系列 Series</span><a href="./"><b>HOME</b>系列首頁</a><span class="cur" aria-current="page"><b>01 PSE</b>供電端與預算</span><a href="handshake.html"><b>02 HANDSHAKE</b>握手狀態機</a><a href="lldp.html"><b>03 LLDP</b>功率協商</a><a href="architecture.html"><b>04 PD ARCH</b>PD 架構</a><a href="dcdc-topology.html"><b>05 DC-DC</b>拓撲選擇</a><a href="power-budget.html"><b>06 POWER BUDGET</b>功率預算</a><a href="https://dcdc-topology-series.vercel.app/" target="_blank" rel="noopener"><b>↗ DC-DC</b>拓撲系列</a><a href="https://multiphase-vrm-series.vercel.app/" target="_blank" rel="noopener"><b>↗ 多相 VRM</b>CPU 核心供電</a><a href="https://network-cabling-series.vercel.app/" target="_blank" rel="noopener"><b>↗ 網路線材</b>銅纜與光纖</a><a href="https://power-amp-series.vercel.app/" target="_blank" rel="noopener"><b>↗ 功率放大器</b>Class A–D</a></nav>
 <header>
 <div>
-<div class="eyebrow">PoE PD Series · 05</div>
+<div class="eyebrow">PoE Series · Power over Ethernet · 01</div>
 <h1>PSE 端與交換器功率管理<small>PSE side · detection, classification, inrush, current limit, MPS &amp; switch power budget</small></h1>
 </div>
 <div class="chip-dc">24 埠 <span>·</span> 370 W</div>
-<p class="lede">前面幾頁都站在 PD（Powered Device，受電設備）這一端。這一頁換到 PSE（Power Sourcing Equipment，供電設備，通常就是 PoE Switch）那一端：它怎麼用兩點量測<b>偵測</b> PD、依自己剩下的電源<b>決定給幾次分級事件</b>、怎麼控制<b>湧浪</b>與<b>過流</b>、怎麼用 MPS（Maintain Power Signature，維持供電特徵）判斷 PD 還在不在，最後再看一台 24 埠、370 W 的交換器怎麼把有限的電源<b>分配</b>給所有埠。
-<span class="en">The PSE's view: two-point detection, how many class events to grant, inrush and current-limit templates, MPS monitoring, and how a 24-port 370 W switch shares its power budget.</span></p>
+<p class="lede">電從這裡出發。PSE（Power Sourcing Equipment，供電設備，通常就是 PoE Switch）是整條電源鏈的起點，線的另一端是 PD（Powered Device，受電設備）。這一頁看 PSE 怎麼用兩點量測<b>偵測</b> PD、依自己剩下的電源<b>決定給幾次分級事件</b>、怎麼控制<b>湧浪</b>與<b>過流</b>、怎麼用 MPS（Maintain Power Signature，維持供電特徵）判斷 PD 還在不在，最後再看一台 24 埠、370 W 的交換器怎麼把有限的電源<b>分配</b>給所有埠。
+<span class="en">Where the power starts. The PSE's view: two-point detection, how many class events to grant, inrush and current-limit templates, MPS monitoring, and how a 24-port 370 W switch shares its power budget.</span></p>
 </header>
 <section class="panel" aria-labelledby="h-gloss">
 <h2 id="h-gloss"><span class="step">0</span>縮寫對照 <span class="en">Abbreviations used on this page</span></h2>
@@ -63,7 +63,7 @@
 <tr><td>MDI</td><td>Medium Dependent Interface</td><td>媒體相關介面：RJ45 接頭與線對本身</td></tr>
 <tr><td>MPS</td><td>Maintain Power Signature</td><td>維持供電特徵：PD 上電後必須持續吸取的最小電流，PSE 靠它判斷 PD 還接著</td></tr>
 <tr><td>PSU</td><td>Power Supply Unit</td><td>交換器的電源供應器，它的額定功率就是 PoE 總預算的上限</td></tr>
-<tr><td>LLDP</td><td>Link Layer Discovery Protocol</td><td>鏈結層探索協定，PD 上電後用它重新協商功率（詳見 06 頁）</td></tr>
+<tr><td>LLDP</td><td>Link Layer Discovery Protocol</td><td>鏈結層探索協定，PD 上電後用它重新協商功率（詳見 03 頁）</td></tr>
 <tr><td>DLL</td><td>Data Link Layer (classification)</td><td>資料鏈結層分級，就是透過 LLDP 協商功率</td></tr>
 <tr><td>ILIM</td><td>Current Limit (I<sub>LIM</sub>)</td><td>限流值：短路或過載時 PSE 把電流壓住的上限</td></tr>
 <tr><td>ICUT／PCUT</td><td>Overload Current / Power Cutoff</td><td>過載切斷門檻（電流或功率），超過並持續 T<sub>CUT</sub> 後斷電</td></tr>

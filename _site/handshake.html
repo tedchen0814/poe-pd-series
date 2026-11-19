@@ -16,10 +16,10 @@
 </head>
 <body>
 <div class="wrap">
-<nav class="series" aria-label="系列 Series"><span class="lab">系列 Series</span><a href="./"><b>HOME</b>系列首頁</a><a href="architecture.html"><b>01 ARCHITECTURE</b>架構總覽</a><span class="cur" aria-current="page"><b>02 HANDSHAKE</b>握手狀態機</span><a href="power-budget.html"><b>03 POWER BUDGET</b>功率預算</a><a href="dcdc-topology.html"><b>04 DC-DC</b>拓撲選擇</a><a href="pse-switch.html"><b>05 PSE</b>供電端與預算</a><a href="lldp.html"><b>06 LLDP</b>功率協商</a><a href="https://dcdc-topology-series.vercel.app/" target="_blank" rel="noopener"><b>↗ DC-DC</b>拓撲系列</a><a href="https://multiphase-vrm-series.vercel.app/" target="_blank" rel="noopener"><b>↗ 多相 VRM</b>CPU 核心供電</a><a href="https://network-cabling-series.vercel.app/" target="_blank" rel="noopener"><b>↗ 網路線材</b>銅纜與光纖</a><a href="https://power-amp-series.vercel.app/" target="_blank" rel="noopener"><b>↗ 功率放大器</b>Class A–D</a></nav>
+<nav class="series" aria-label="系列 Series"><span class="lab">系列 Series</span><a href="./"><b>HOME</b>系列首頁</a><a href="pse-switch.html"><b>01 PSE</b>供電端與預算</a><span class="cur" aria-current="page"><b>02 HANDSHAKE</b>握手狀態機</span><a href="lldp.html"><b>03 LLDP</b>功率協商</a><a href="architecture.html"><b>04 PD ARCH</b>PD 架構</a><a href="dcdc-topology.html"><b>05 DC-DC</b>拓撲選擇</a><a href="power-budget.html"><b>06 POWER BUDGET</b>功率預算</a><a href="https://dcdc-topology-series.vercel.app/" target="_blank" rel="noopener"><b>↗ DC-DC</b>拓撲系列</a><a href="https://multiphase-vrm-series.vercel.app/" target="_blank" rel="noopener"><b>↗ 多相 VRM</b>CPU 核心供電</a><a href="https://network-cabling-series.vercel.app/" target="_blank" rel="noopener"><b>↗ 網路線材</b>銅纜與光纖</a><a href="https://power-amp-series.vercel.app/" target="_blank" rel="noopener"><b>↗ 功率放大器</b>Class A–D</a></nav>
 <header>
 <div>
-<div class="eyebrow">PoE PD Series · 02</div>
+<div class="eyebrow">PoE Series · Power over Ethernet · 02</div>
 <h1>PoE 握手狀態機<small>PSE ↔ PD handshake · Detection → Classification → Power-up → MPS</small></h1>
 </div>
 <div class="chip-dc">2.7 V <span>→</span> 20 V <span>→</span> 57 V</div>
@@ -105,7 +105,7 @@
 <tr><td>燈號亮一下就熄、反覆重啟<span class="en"><br>Power cycling</span></td><td>上電 Inrush</td><td>DC-DC 沒等 PG 就啟動；C<sub>bulk</sub> 太大充不完；UVLO 遲滯不夠加上長線壓降</td><td>示波器同時量 V<sub>port</sub>、I<sub>port</sub> 與 PG；確認 DC-DC EN／UVLO 由 PG 控制</td></tr>
 <tr><td>只拿到 13 W 或 25.5 W<span class="en"><br>Less power than expected</span></td><td>分級 Classification</td><td>PSE 只支援 af／at，或 bt PSE 的埠功率預算不足 → 降級；Class 電阻（RCLS）選錯</td><td>讀 PD 控制器的 TPL／TPH／T2P 腳位或暫存器；看 Switch 的埠狀態與 LLDP</td></tr>
 <tr><td>待機一段時間後斷電<span class="en"><br>Drops out in standby</span></td><td>MPS</td><td>待機電流 &lt; 10 mA（bt Class 5–8 為 16 mA）且未產生 MPS 脈衝</td><td>量待機電流；啟用 PD 控制器的自動 MPS 功能，或讓系統定時拉負載</td></tr>
-<tr><td>高功率時才斷電<span class="en"><br>Drops at high load</span></td><td>供電 Power on</td><td>負載超過核准功率、線材過長或 CCA 線電阻大、V<sub>port</sub> 掉到 UVLO 關閉點以下</td><td>到「03 功率預算」頁算線損與 V<sub>port</sub>；確認系統依核准功率限載</td></tr>
+<tr><td>高功率時才斷電<span class="en"><br>Drops at high load</span></td><td>供電 Power on</td><td>負載超過核准功率、線材過長或 CCA 線電阻大、V<sub>port</sub> 掉到 UVLO 關閉點以下</td><td>到「06 功率預算」頁算線損與 V<sub>port</sub>；確認系統依核准功率限載</td></tr>
 </tbody>
 </table>
 </div>

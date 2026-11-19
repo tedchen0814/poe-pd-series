@@ -45,10 +45,10 @@
 </head>
 <body>
 <div class="wrap">
-<nav class="series" aria-label="系列 Series"><span class="lab">系列 Series</span><a href="./"><b>HOME</b>系列首頁</a><a href="architecture.html"><b>01 ARCHITECTURE</b>架構總覽</a><a href="handshake.html"><b>02 HANDSHAKE</b>握手狀態機</a><a href="power-budget.html"><b>03 POWER BUDGET</b>功率預算</a><a href="dcdc-topology.html"><b>04 DC-DC</b>拓撲選擇</a><a href="pse-switch.html"><b>05 PSE</b>供電端與預算</a><span class="cur" aria-current="page"><b>06 LLDP</b>功率協商</span><a href="https://dcdc-topology-series.vercel.app/" target="_blank" rel="noopener"><b>↗ DC-DC</b>拓撲系列</a><a href="https://multiphase-vrm-series.vercel.app/" target="_blank" rel="noopener"><b>↗ 多相 VRM</b>CPU 核心供電</a><a href="https://network-cabling-series.vercel.app/" target="_blank" rel="noopener"><b>↗ 網路線材</b>銅纜與光纖</a><a href="https://power-amp-series.vercel.app/" target="_blank" rel="noopener"><b>↗ 功率放大器</b>Class A–D</a></nav>
+<nav class="series" aria-label="系列 Series"><span class="lab">系列 Series</span><a href="./"><b>HOME</b>系列首頁</a><a href="pse-switch.html"><b>01 PSE</b>供電端與預算</a><a href="handshake.html"><b>02 HANDSHAKE</b>握手狀態機</a><span class="cur" aria-current="page"><b>03 LLDP</b>功率協商</span><a href="architecture.html"><b>04 PD ARCH</b>PD 架構</a><a href="dcdc-topology.html"><b>05 DC-DC</b>拓撲選擇</a><a href="power-budget.html"><b>06 POWER BUDGET</b>功率預算</a><a href="https://dcdc-topology-series.vercel.app/" target="_blank" rel="noopener"><b>↗ DC-DC</b>拓撲系列</a><a href="https://multiphase-vrm-series.vercel.app/" target="_blank" rel="noopener"><b>↗ 多相 VRM</b>CPU 核心供電</a><a href="https://network-cabling-series.vercel.app/" target="_blank" rel="noopener"><b>↗ 網路線材</b>銅纜與光纖</a><a href="https://power-amp-series.vercel.app/" target="_blank" rel="noopener"><b>↗ 功率放大器</b>Class A–D</a></nav>
 <header>
 <div>
-<div class="eyebrow">PoE PD Series · 06</div>
+<div class="eyebrow">PoE Series · Power over Ethernet · 03</div>
 <h1>LLDP 功率協商<small>LLDP power negotiation · Data Link Layer classification · Power via MDI TLV bit by bit</small></h1>
 </div>
 <div class="chip-dc">0.1 W <span>·</span> 29 bytes</div>
@@ -75,7 +75,7 @@
 <tr><td>4PID</td><td>4-Pair ID</td><td>PD 宣告「我支援 4 對供電」的旗標</td></tr>
 <tr><td>DS／SS</td><td>Dual-Signature／Single-Signature</td><td>雙特徵／單一特徵 PD：兩組線對各自獨立或共用一個偵測分級特徵</td></tr>
 <tr><td>Alt A／B、Mode A／B</td><td>Alternative A/B (PSE)、Mode A/B (PD)</td><td>兩組供電線對的名稱：PSE 端叫 Alternative，PD 端叫 Mode</td></tr>
-<tr><td>MPS</td><td>Maintain Power Signature</td><td>維持供電特徵（見 05 頁）</td></tr>
+<tr><td>MPS</td><td>Maintain Power Signature</td><td>維持供電特徵（見 01 頁）</td></tr>
 </tbody>
 </table></div>
 </details>
@@ -167,7 +167,7 @@
 <div>
 <h3 style="margin:0 0 6px;font-size:16px">交換器怎麼用這些值 <span class="en" style="display:inline">How switches use them</span></h3>
 <ul class="steps">
-<li>常見的分配模式設定有「依 Class」「依 LLDP」「依實際用量」或混合（05 頁的模擬器可以實際切換）。</li>
+<li>常見的分配模式設定有「依 Class」「依 LLDP」「依實際用量」或混合（01 頁的模擬器可以實際切換）。</li>
 <li>依 LLDP 時，交換器把 PD 要求的功率（PD 端）加上設定的線損換算成 PSE 端預算；沒收到 LLDP 的埠退回依 Class。</li>
 <li>許多交換器同時接受 IEEE 802.3 與 LLDP-MED 兩種 TLV，兩者都出現時以 IEEE 802.3 版優先；也有廠商預設只送其中一種，要在介面設定開啟。</li>
 <li>PD 端常見問題：交換器關掉 LLDP、或只開 LLDP-MED，導致 PD 一直停在實體層的功率；排查時用 Wireshark 抓 0x88CC 封包，看雙方是否都送了 Power via MDI TLV、要求值與分配值是否互相回傳。</li>

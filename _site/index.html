@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>PoE PD 互動教學</title>
+<title>PoE Power over Ethernet 互動教學</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@400;600&display=swap">
@@ -12,34 +12,58 @@
 .flow-line{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-weight:700;font-size:14px}
 .flow-line span{border:1.5px solid var(--line);border-radius:8px;padding:4px 10px;background:var(--paper-2)}
 .flow-line i{font-style:normal;color:var(--muted)}
+.flow-line a{border:1.5px solid var(--c);border-radius:8px;padding:4px 10px;background:var(--paper-2);color:var(--ink);text-decoration:none;transition:background .15s}
+.flow-line a:hover,.flow-line a:focus-visible{background:var(--paper)}
+.flow-line a b{font-family:var(--display);color:var(--c);margin-right:6px;letter-spacing:.04em}
+.flow-line.proto{margin-top:12px;font-size:13.5px}
+.flow-line .lab{border:0;background:none;padding:0;color:var(--muted)}
+.cards .grp{grid-column:1/-1;margin:8px 0 -8px;font-size:14px;letter-spacing:.1em;color:var(--muted);border-bottom:1px dashed var(--line);padding-bottom:4px}
+.cards .grp:first-child{margin-top:0}
+.cards .grp .en{font-weight:500}
 </style>
 </head>
 <body>
 <div class="wrap">
-<nav class="series" aria-label="系列 Series"><span class="lab">系列 Series</span><span class="cur" aria-current="page"><b>HOME</b>系列首頁</span><a href="architecture.html"><b>01 ARCHITECTURE</b>架構總覽</a><a href="handshake.html"><b>02 HANDSHAKE</b>握手狀態機</a><a href="power-budget.html"><b>03 POWER BUDGET</b>功率預算</a><a href="dcdc-topology.html"><b>04 DC-DC</b>拓撲選擇</a><a href="pse-switch.html"><b>05 PSE</b>供電端與預算</a><a href="lldp.html"><b>06 LLDP</b>功率協商</a><a href="https://dcdc-topology-series.vercel.app/" target="_blank" rel="noopener"><b>↗ DC-DC</b>拓撲系列</a><a href="https://multiphase-vrm-series.vercel.app/" target="_blank" rel="noopener"><b>↗ 多相 VRM</b>CPU 核心供電</a><a href="https://network-cabling-series.vercel.app/" target="_blank" rel="noopener"><b>↗ 網路線材</b>銅纜與光纖</a><a href="https://power-amp-series.vercel.app/" target="_blank" rel="noopener"><b>↗ 功率放大器</b>Class A–D</a></nav>
+<nav class="series" aria-label="系列 Series"><span class="lab">系列 Series</span><span class="cur" aria-current="page"><b>HOME</b>系列首頁</span><a href="pse-switch.html"><b>01 PSE</b>供電端與預算</a><a href="handshake.html"><b>02 HANDSHAKE</b>握手狀態機</a><a href="lldp.html"><b>03 LLDP</b>功率協商</a><a href="architecture.html"><b>04 PD ARCH</b>PD 架構</a><a href="dcdc-topology.html"><b>05 DC-DC</b>拓撲選擇</a><a href="power-budget.html"><b>06 POWER BUDGET</b>功率預算</a><a href="https://dcdc-topology-series.vercel.app/" target="_blank" rel="noopener"><b>↗ DC-DC</b>拓撲系列</a><a href="https://multiphase-vrm-series.vercel.app/" target="_blank" rel="noopener"><b>↗ 多相 VRM</b>CPU 核心供電</a><a href="https://network-cabling-series.vercel.app/" target="_blank" rel="noopener"><b>↗ 網路線材</b>銅纜與光纖</a><a href="https://power-amp-series.vercel.app/" target="_blank" rel="noopener"><b>↗ 功率放大器</b>Class A–D</a></nav>
 <header>
 <div>
-<div class="eyebrow">PoE PD Series</div>
-<h1>PoE PD 互動教學<small>Power over Ethernet · powered device, from RJ45 to DC-DC</small></h1>
+<div class="eyebrow">PoE Series · Power over Ethernet</div>
+<h1>PoE Power over Ethernet<small>乙太網路供電 · PSE → cable → PD → DC-DC</small></h1>
 </div>
 <div class="chip-dc">6 <span>×</span> TOPICS</div>
-<p class="lede">PoE PD（受電端設備）由兩段組成：前段的 <b>PD 介面</b>負責和 PSE 握手、安全地把電接進來；後段的 <b>DC-DC</b> 把 37–57 V 轉成板上電壓。前四個互動頁分別說明架構、握手狀態機、功率預算，以及 DC-DC 拓撲的選擇；後兩頁換到供電端，看 PSE（Power Sourcing Equipment，供電設備）怎麼偵測、限流、分配交換器的總預算，以及上電後怎麼用 LLDP（Link Layer Discovery Protocol）協商功率。
-<span class="en">A PoE powered device has two stages: the PD interface that handshakes with the PSE and brings power in safely, and a DC-DC converter that makes the board rails. Four pages cover the PD side; two more cover the PSE side and LLDP power negotiation.</span></p>
+<p class="lede">PoE（Power over Ethernet，乙太網路供電）讓電和資料走同一條網路線。電從 <b>PSE</b>（Power Sourcing Equipment，供電設備，通常是 PoE Switch）出發，經過網路線進到 <b>PD</b>（Powered Device，受電設備），再由 PD 裡的 DC-DC 轉成板上電壓。六個互動頁依電流方向排列：先看<b>供電端</b>怎麼偵測、限流與分配交換器預算；再看兩端怎麼用實體層握手與 LLDP（Link Layer Discovery Protocol，鏈結層探索協定）<b>協商功率</b>；接著進到<b>受電端</b>的介面架構與 DC-DC 拓撲；最後從 PSE 一路扣到負載，算整條鏈的<b>功率預算</b>。
+<span class="en">PoE carries power and data on the same cable. Power starts at the PSE (usually a PoE switch), travels through the cable into the PD, and a DC-DC converter in the PD makes the board rails. The six pages follow that flow: the PSE side, the PSE–PD negotiation (handshake and LLDP), the PD side (interface and DC-DC), and finally the whole-chain power budget.</span></p>
 </header>
 <section class="panel" aria-labelledby="h-chain">
 <h2 id="h-chain">一條電源鏈 <span class="en">The whole chain</span></h2>
+<p style="margin:0 0 10px;font-size:13.5px;color:var(--muted)">每一段都可以點，直接打開講那一段的頁面；方框左邊的數字是頁碼。<span class="en">Click any stage to open its page.</span></p>
 <div class="flow-line">
-<span>PSE（PoE Switch）44–57 V</span><i>→</i><span>網路線 I²R</span><i>→</i><span>RJ45 · 變壓器中心抽頭</span><i>→</i><span>整流橋 ×2</span><i>→</i><span>TVS · C<sub>det</sub></span><i>→</i><span>PD 控制器：偵測・分級・hot-swap・PG</span><i>→</i><span>C<sub>bulk</sub></span><i>→</i><span>DC-DC（隔離／非隔離）</span><i>→</i><span>負載 12／5／3.3 V</span>
+<a href="pse-switch.html" style="--c:var(--ok)"><b>01</b>PSE（PoE Switch）44–57 V</a><i>→</i>
+<a href="power-budget.html" style="--c:var(--on)"><b>06</b>網路線 I²R</a><i>→</i>
+<a href="architecture.html" style="--c:var(--accent)"><b>04</b>RJ45 · 變壓器中心抽頭</a><i>→</i>
+<a href="architecture.html" style="--c:var(--accent)"><b>04</b>整流橋 ×2</a><i>→</i>
+<a href="architecture.html" style="--c:var(--accent)"><b>04</b>TVS · C<sub>det</sub></a><i>→</i>
+<a href="handshake.html" style="--c:var(--teal)"><b>02</b>PD 控制器：偵測・分級・hot-swap・PG</a><i>→</i>
+<a href="architecture.html" style="--c:var(--accent)"><b>04</b>C<sub>bulk</sub></a><i>→</i>
+<a href="dcdc-topology.html" style="--c:var(--off)"><b>05</b>DC-DC（隔離／非隔離）</a><i>→</i>
+<a href="power-budget.html" style="--c:var(--on)"><b>06</b>負載 12／5／3.3 V</a>
+</div>
+<div class="flow-line proto">
+<span class="lab">PSE ⇄ PD 對話 Negotiation：</span>
+<a href="handshake.html" style="--c:var(--teal)"><b>02</b>實體層：偵測・分級・上電・MPS</a><i>→</i>
+<a href="lldp.html" style="--c:var(--warn)"><b>03</b>資料鏈路層：LLDP 以 0.1 W 重新協商</a>
 </div>
 </section>
 <div class="cards">
-<a class="card" href="architecture.html" style="--c:var(--accent)">
-<span class="no">01 · ARCHITECTURE</span>
-<h2>架構總覽<small>From RJ45 to the load</small></h2>
-<p>切換 <b>ALT A／ALT B／4 對</b>與極性，看電流實際走哪兩顆二極體；比較蕭特基與主動整流橋的損耗。</p>
-<ul><li>兩組線對各需一個整流橋</li><li>hot-swap 開關在低側 VSS → RTN</li></ul>
+<h3 class="grp">供電端 <span class="en">PSE side</span></h3>
+<a class="card" href="pse-switch.html" style="--c:var(--ok)">
+<span class="no">01 · PSE</span>
+<h2>供電端與預算<small>Detection · Inrush · Current limit · Budget</small></h2>
+<p>站在 PSE 端看兩點偵測、分級事件怎麼決定、湧浪與過流範本、MPS 判斷，再用 <b>24 埠、370 W</b> 交換器模擬器比較四種分配模式。</p>
+<ul><li>依 Class／LLDP／用量／Autoclass</li><li>優先權與卸載</li></ul>
 <span class="go">開啟 Open →</span>
 </a>
+<h3 class="grp">雙方協議 <span class="en">PSE ⇄ PD negotiation</span></h3>
 <a class="card" href="handshake.html" style="--c:var(--teal)">
 <span class="no">02 · HANDSHAKE</span>
 <h2>握手狀態機<small>Detection · Class · Inrush · MPS</small></h2>
@@ -47,32 +71,34 @@
 <ul><li>多事件分級與功率降級</li><li>DC-DC 太早啟動、MPS 不足</li></ul>
 <span class="go">開啟 Open →</span>
 </a>
-<a class="card" href="power-budget.html" style="--c:var(--on)">
-<span class="no">03 · POWER BUDGET</span>
-<h2>功率預算<small>90 W at the PSE, 71.3 W at the PD</small></h2>
-<p>從 PSE 到負載逐段算損耗：<b>線損、整流橋、hot-swap、DC-DC</b>，並檢查 Class 功率、線對電流與 V<sub>port</sub> 下限。</p>
-<ul><li>Class 功率的推導</li><li>AP、PTZ、IP Cam 範例</li></ul>
+<a class="card" href="lldp.html" style="--c:var(--warn)">
+<span class="no">03 · LLDP</span>
+<h2>功率協商<small>Power via MDI TLV, bit by bit</small></h2>
+<p>六種協商情境一步一步看 PD 與 PSE 怎麼互相<b>回傳</b>數值，再把 29 bytes 的 Power via MDI TLV 拆到每個 bit，可貼 hex 解碼。</p>
+<ul><li>細調、降級後要回、增減順序</li><li>LLDP-MED 與交換器設定</li></ul>
+<span class="go">開啟 Open →</span>
+</a>
+<h3 class="grp">受電端 <span class="en">PD side</span></h3>
+<a class="card" href="architecture.html" style="--c:var(--accent)">
+<span class="no">04 · PD ARCHITECTURE</span>
+<h2>PD 架構<small>From RJ45 to the load</small></h2>
+<p>切換 <b>ALT A／ALT B／4 對</b>與極性，看電流實際走哪兩顆二極體；比較蕭特基與主動整流橋的損耗。</p>
+<ul><li>兩組線對各需一個整流橋</li><li>hot-swap 開關在低側 VSS → RTN</li></ul>
 <span class="go">開啟 Open →</span>
 </a>
 <a class="card" href="dcdc-topology.html" style="--c:var(--off)">
-<span class="no">04 · DC-DC</span>
+<span class="no">05 · DC-DC</span>
 <h2>拓撲選擇<small>Flyback · ACF · Buck</small></h2>
 <p>依功率、隔離需求、輸出路數與成本／效率優先，排出適合的拓撲，連到 DC-DC 系列看電路動畫。</p>
 <ul><li>何時可以不隔離</li><li>Flyback 與主動箝位 Forward 的差別</li></ul>
 <span class="go">開啟 Open →</span>
 </a>
-<a class="card" href="pse-switch.html" style="--c:var(--ok)">
-<span class="no">05 · PSE</span>
-<h2>供電端與預算<small>Detection · Inrush · Current limit · Budget</small></h2>
-<p>站在 PSE 端看兩點偵測、分級事件怎麼決定、湧浪與過流範本、MPS 判斷，再用 <b>24 埠、370 W</b> 交換器模擬器比較四種分配模式。</p>
-<ul><li>依 Class／LLDP／用量／Autoclass</li><li>優先權與卸載</li></ul>
-<span class="go">開啟 Open →</span>
-</a>
-<a class="card" href="lldp.html" style="--c:var(--warn)">
-<span class="no">06 · LLDP</span>
-<h2>功率協商<small>Power via MDI TLV, bit by bit</small></h2>
-<p>六種協商情境一步一步看 PD 與 PSE 怎麼互相<b>回傳</b>數值，再把 29 bytes 的 Power via MDI TLV 拆到每個 bit，可貼 hex 解碼。</p>
-<ul><li>細調、降級後要回、增減順序</li><li>LLDP-MED 與交換器設定</li></ul>
+<h3 class="grp">總帳 <span class="en">The whole chain</span></h3>
+<a class="card" href="power-budget.html" style="--c:var(--on)">
+<span class="no">06 · POWER BUDGET</span>
+<h2>功率預算<small>90 W at the PSE, 71.3 W at the PD</small></h2>
+<p>從 PSE 到負載逐段算損耗：<b>線損、整流橋、hot-swap、DC-DC</b>，並檢查 Class 功率、線對電流與 V<sub>port</sub> 下限，把前五頁串起來。</p>
+<ul><li>Class 功率的推導</li><li>AP、PTZ、IP Cam 範例</li></ul>
 <span class="go">開啟 Open →</span>
 </a>
 </div>
@@ -86,10 +112,10 @@
 <tr><td>一上電就反覆重啟</td><td>DC-DC 沒等 PG 就啟動，湧浪時撞到 PSE 限流</td><td><a href="handshake.html">02 握手</a></td></tr>
 <tr><td>只拿到 13 W／25.5 W</td><td>PSE 能力不足造成功率降級，或 Class 電阻設錯</td><td><a href="handshake.html">02 握手</a></td></tr>
 <tr><td>待機後斷電</td><td>待機電流低於 MPS 門檻且沒有 MPS 脈衝</td><td><a href="handshake.html">02 握手</a></td></tr>
-<tr><td>滿載或長線時斷電</td><td>線損太大、V<sub>port</sub> 過低，或負載超過核准功率</td><td><a href="power-budget.html">03 功率預算</a></td></tr>
-<tr><td>LLDP 要了功率卻沒變</td><td>交換器關掉 LLDP 或只送 LLDP-MED；PSE 預算不足維持原分配；或要求超過實體層 Class</td><td><a href="lldp.html">06 LLDP</a></td></tr>
-<tr><td>交換器上某幾埠會突然斷電</td><td>依用量分配時多台設備同時尖峰，交換器卸載低優先權埠</td><td><a href="pse-switch.html">05 PSE</a></td></tr>
-<tr><td>整流橋很燙</td><td>高功率仍用蕭特基整流，損耗約 2·V<sub>F</sub>·I</td><td><a href="architecture.html">01 架構</a></td></tr>
+<tr><td>滿載或長線時斷電</td><td>線損太大、V<sub>port</sub> 過低，或負載超過核准功率</td><td><a href="power-budget.html">06 功率預算</a></td></tr>
+<tr><td>LLDP 要了功率卻沒變</td><td>交換器關掉 LLDP 或只送 LLDP-MED；PSE 預算不足維持原分配；或要求超過實體層 Class</td><td><a href="lldp.html">03 LLDP</a></td></tr>
+<tr><td>交換器上某幾埠會突然斷電</td><td>依用量分配時多台設備同時尖峰，交換器卸載低優先權埠</td><td><a href="pse-switch.html">01 PSE</a></td></tr>
+<tr><td>整流橋很燙</td><td>高功率仍用蕭特基整流，損耗約 2·V<sub>F</sub>·I</td><td><a href="architecture.html">04 PD 架構</a></td></tr>
 </tbody>
 </table>
 </div>
@@ -97,26 +123,27 @@
 <section class="panel" aria-labelledby="h-how">
 <h2 id="h-how">怎麼使用 <span class="en">How to use</span></h2>
 <ol class="steps">
-<li>先看「01 架構總覽」建立整條電源鏈的概念。<span class="en">Start with the architecture page.</span></li>
+<li>先看上方「一條電源鏈」，知道每一段由哪一頁說明。<span class="en">Use the chain above as the map.</span></li>
+<li>「01 供電端與預算」從交換器開始：兩點偵測、限流範本，再用 24 埠、370 W 模擬器比較不同分配模式。<span class="en">Start at the PSE and try the switch budget simulator.</span></li>
 <li>「02 握手狀態機」按播放或「下一段」，對照波形、狀態機與說明卡；切換故障情境看失敗時的樣子。<span class="en">Step through the handshake and try the fault scenarios.</span></li>
-<li>「03 功率預算」選範例或自己調參數，看每一段損耗與規範檢查。<span class="en">Load a preset in the budget page and watch each loss.</span></li>
-<li>「04 拓撲選擇」決定 DC-DC，再到 <a href="https://dcdc-topology-series.vercel.app/" target="_blank" rel="noopener">DC-DC 拓撲系列</a>看 Flyback、ACF、Buck 的電路動畫。<span class="en">Pick a DC-DC topology, then open its animation in the DC-DC series.</span></li>
-<li>「05 供電端與預算」從交換器的角度複習一次握手，並試試不同分配模式；「06 功率協商」看上電後的 LLDP 來回與 TLV 每個 bit。<span class="en">Then switch sides: the PSE page and the LLDP page.</span></li>
+<li>「03 功率協商」看上電後的 LLDP 來回，再把 TLV 拆到每個 bit。<span class="en">Follow the LLDP exchange and decode the TLV.</span></li>
+<li>「04 PD 架構」切換線對與極性看整流路徑；「05 拓撲選擇」決定 DC-DC，再到 <a href="https://dcdc-topology-series.vercel.app/" target="_blank" rel="noopener">DC-DC 拓撲系列</a>看 Flyback、ACF、Buck 的電路動畫。<span class="en">Move into the PD, then pick a DC-DC topology.</span></li>
+<li>「06 功率預算」選範例或自己調參數，從 PSE 一路扣到負載，看每一段損耗與規範檢查。<span class="en">Finish with the whole-chain budget.</span></li>
 </ol>
 </section>
 <section class="panel" aria-labelledby="h-rel">
 <h2 id="h-rel">相關系列 <span class="en">Related series</span></h2>
 <div class="cards">
 <a class="card" href="https://dcdc-topology-series.vercel.app/" target="_blank" rel="noopener" style="--c:var(--accent)"><span class="no">SERIES · DC-DC</span><h2>DC-DC 拓撲<small>Boost · Buck · 4-SW · SEPIC · Flyback · ACF</small></h2><p>六種拓撲的電流回路動畫與同步波形：開關電流、輸入／輸出電流的關係，以及限流值怎麼對應。</p><ul><li>同步 Buck 是多相 VRM 每一相的基礎</li><li>Flyback、ACF 是 PoE PD 常用的隔離拓撲</li></ul><span class="go">開啟 Open ↗</span></a>
-<div class="card" style="--c:var(--on)"><span class="no">SERIES · PoE PD</span><h2>PoE PD 受電端<small>Power over Ethernet · RJ45 → DC-DC</small></h2><p>從網路線到板上電壓：架構、握手狀態機、功率預算、DC-DC 拓撲選擇、PSE 端與 LLDP 功率協商。</p><ul><li>後段 DC-DC 連到 DC-DC 系列</li><li>IEEE 802.3af／at／bt</li></ul><span class="go">本系列 This series</span></div>
+<div class="card" style="--c:var(--on)"><span class="no">SERIES · PoE</span><h2>PoE 乙太網路供電<small>Power over Ethernet · PSE → cable → PD</small></h2><p>從交換器到板上電壓：PSE 偵測與預算、握手與 LLDP 功率協商、PD 架構、DC-DC 拓撲、整條鏈的功率預算。</p><ul><li>後段 DC-DC 連到 DC-DC 系列</li><li>IEEE 802.3af／at／bt</li></ul><span class="go">本系列 This series</span></div>
 <a class="card" href="https://multiphase-vrm-series.vercel.app/" target="_blank" rel="noopener" style="--c:var(--teal)"><span class="no">SERIES · MULTI-PHASE VRM</span><h2>多相供電 VRM<small>CPU／GPU core power · 9 stations</small></h2><p>CPU 核心供電：交錯並聯與紋波抵消、DrMOS／SPS、電流均流、Load-line、相數切換、IMVP9／SVID、相數計算、佈局除錯。</p><ul><li>每一相就是同步 Buck</li><li>Intel Alder／Raptor Lake 公開參數</li></ul><span class="go">開啟 Open ↗</span></a>
 <a class="card" href="https://network-cabling-series.vercel.app/" target="_blank" rel="noopener" style="--c:var(--ok)"><span class="no">SERIES · NETWORK CABLING</span><h2>網路線材<small>Cat 5e–8 · fiber · transceivers</small></h2><p>PoE 走的那條線：Cat 等級、遮蔽代碼、AWG 線徑與電阻、CCA 問題、佈線長度與驗收，以及光纖與光模組選型。</p><ul><li>線徑與電阻直接決定 PoE 線損</li><li>附選型決策器</li></ul><span class="go">開啟 Open ↗</span></a>
 <a class="card" href="https://power-amp-series.vercel.app/" target="_blank" rel="noopener" style="--c:var(--off)"><span class="no">SERIES · POWER AMPLIFIER</span><h2>功率放大器<small>Class A · B · AB · C · D · E · F</small></h2><p>導通角與效率、線性輸出級、熱設計、Class-D、輸出濾波器、PCB 佈線與 EMI、射頻 PA，以手機喇叭為主軸。</p><ul><li>PoE 供電的網路喇叭、會議設備就是 Class-D 的應用</li><li>EMI 佈線觀念與 DC-DC 共通</li></ul><span class="go">開啟 Open ↗</span></a>
 </div>
 </section>
 <footer>
-依據：IEEE 802.3-2022 Clause 33（802.3af／at）與 Clause 145（802.3bt）的 PD 要求；TI、ADI PD 控制器與整流橋控制器資料。每頁注意事項都標出出處（IEEE／晶片廠／補充）。頁面為教學模型，實際設計請以規範與晶片規格書為準。
-<br>Based on the PD requirements of IEEE 802.3 Clauses 33 and 145 and vendor datasheets. Teaching models only; always verify against the standard and datasheets.
+依據：IEEE 802.3-2022 Clause 33（802.3af／at）與 Clause 145（802.3bt）的 PSE 與 PD 要求；TI、ADI PD 控制器與整流橋控制器資料。每頁注意事項都標出出處（IEEE／晶片廠／補充）。頁面為教學模型，實際設計請以規範與晶片規格書為準。
+<br>Based on the PSE and PD requirements of IEEE 802.3 Clauses 33 and 145 and vendor datasheets. Teaching models only; always verify against the standard and datasheets.
 </footer>
 </div>
 <script src="assets/common.js"></script>

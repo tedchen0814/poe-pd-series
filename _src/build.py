@@ -1,4 +1,4 @@
-"""Build the PoE PD teaching pages from shell.html + <page>.part.html.
+"""Build the PoE (Power over Ethernet) teaching pages from shell.html + <page>.part.html.
 
 Usage: python build.py
   - ../PoE-<STEM>_互動教學.html : single-file pages (everything inline, usable as a Claude Artifact)
@@ -13,12 +13,14 @@ OUT = SRC.parent
 SITE = OUT / "_site"
 DCDC = "https://dcdc-topology-series.vercel.app/"
 SERIES = [  # (key, number, nav name, zh, single-file stem, site file)
-    ("arch", "01", "ARCHITECTURE", "架構總覽", "01-ARCH", "architecture.html"),
+    # ordered along the power flow: PSE -> negotiation -> PD -> DC-DC -> whole-chain budget
+    # (site file names stay unchanged so links from other series keep working)
+    ("pse", "01", "PSE", "供電端與預算", "01-PSE", "pse-switch.html"),
     ("handshake", "02", "HANDSHAKE", "握手狀態機", "02-HANDSHAKE", "handshake.html"),
-    ("budget", "03", "POWER BUDGET", "功率預算", "03-BUDGET", "power-budget.html"),
-    ("topology", "04", "DC-DC", "拓撲選擇", "04-TOPOLOGY", "dcdc-topology.html"),
-    ("pse", "05", "PSE", "供電端與預算", "05-PSE", "pse-switch.html"),
-    ("lldp", "06", "LLDP", "功率協商", "06-LLDP", "lldp.html"),
+    ("lldp", "03", "LLDP", "功率協商", "03-LLDP", "lldp.html"),
+    ("arch", "04", "PD ARCH", "PD 架構", "04-ARCH", "architecture.html"),
+    ("topology", "05", "DC-DC", "拓撲選擇", "05-TOPOLOGY", "dcdc-topology.html"),
+    ("budget", "06", "POWER BUDGET", "功率預算", "06-BUDGET", "power-budget.html"),
 ]
 
 
@@ -85,7 +87,7 @@ def main():
             continue
         fields = parse_part(part.read_text(encoding="utf-8-sig"))
         fields.update(CSS=css, COMMON=common,
-                      EYEBROW="PoE PD Series" + (f" · {no}" if no else ""))
+                      EYEBROW="PoE Series · Power over Ethernet" + (f" · {no}" if no else ""))
         fields["NAV"] = nav(key, site=False)
         single = fill(shell, fields)
         left = re.findall(r"\{\{[A-Z0-9_]+\}\}", single.replace(common, "").replace(css, ""))

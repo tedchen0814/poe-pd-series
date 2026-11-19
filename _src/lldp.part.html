@@ -63,7 +63,7 @@ LLDP power negotiation · Data Link Layer classification · Power via MDI TLV bi
         <tr><td>4PID</td><td>4-Pair ID</td><td>PD 宣告「我支援 4 對供電」的旗標</td></tr>
         <tr><td>DS／SS</td><td>Dual-Signature／Single-Signature</td><td>雙特徵／單一特徵 PD：兩組線對各自獨立或共用一個偵測分級特徵</td></tr>
         <tr><td>Alt A／B、Mode A／B</td><td>Alternative A/B (PSE)、Mode A/B (PD)</td><td>兩組供電線對的名稱：PSE 端叫 Alternative，PD 端叫 Mode</td></tr>
-        <tr><td>MPS</td><td>Maintain Power Signature</td><td>維持供電特徵（見 05 頁）</td></tr>
+        <tr><td>MPS</td><td>Maintain Power Signature</td><td>維持供電特徵（見 01 頁）</td></tr>
       </tbody>
     </table></div>
     </details>
@@ -160,7 +160,7 @@ LLDP power negotiation · Data Link Layer classification · Power via MDI TLV bi
       <div>
         <h3 style="margin:0 0 6px;font-size:16px">交換器怎麼用這些值 <span class="en" style="display:inline">How switches use them</span></h3>
         <ul class="steps">
-          <li>常見的分配模式設定有「依 Class」「依 LLDP」「依實際用量」或混合（05 頁的模擬器可以實際切換）。</li>
+          <li>常見的分配模式設定有「依 Class」「依 LLDP」「依實際用量」或混合（01 頁的模擬器可以實際切換）。</li>
           <li>依 LLDP 時，交換器把 PD 要求的功率（PD 端）加上設定的線損換算成 PSE 端預算；沒收到 LLDP 的埠退回依 Class。</li>
           <li>許多交換器同時接受 IEEE 802.3 與 LLDP-MED 兩種 TLV，兩者都出現時以 IEEE 802.3 版優先；也有廠商預設只送其中一種，要在介面設定開啟。</li>
           <li>PD 端常見問題：交換器關掉 LLDP、或只開 LLDP-MED，導致 PD 一直停在實體層的功率；排查時用 Wireshark 抓 0x88CC 封包，看雙方是否都送了 Power via MDI TLV、要求值與分配值是否互相回傳。</li>

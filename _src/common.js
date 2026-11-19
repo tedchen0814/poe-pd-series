@@ -35,7 +35,7 @@ const GLOSS = {
   "PSE":["Power Sourcing Equipment", "供電設備，通常是 PoE Switch 或中跨供電器（Midspan injector）"],
   "PD":["Powered Device", "受電設備，例如 AP、IP Cam、話機"],
   "MPS":["Maintain Power Signature", "維持供電特徵：PD 上電後必須持續吸取的最小電流，PSE 靠它判斷 PD 還接著"],
-  "LLDP":["Link Layer Discovery Protocol", "鏈結層探索協定：PD 上電後用它跟 PSE 重新協商功率（見 06 頁）"],
+  "LLDP":["Link Layer Discovery Protocol", "鏈結層探索協定：PD 上電後用它跟 PSE 重新協商功率（見 03 頁）"],
   "Autoclass":["Autoclass", "bt 選用功能：PD 上電後刻意吃滿功率，讓 PSE 實測後只保留實際需要的功率"],
   "DC-DC":["DC-to-DC Converter", "直流轉直流轉換器：把 37–57 V 轉成板上電壓"],
   "IEEE":["Institute of Electrical and Electronics Engineers", "電機電子工程師學會，制定 802.3 乙太網路與 PoE 規範"],
